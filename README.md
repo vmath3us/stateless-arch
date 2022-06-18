@@ -29,6 +29,7 @@ Habilitar stateless-arch **será** simples como:
 * pacman -S git
 * git clone desse repositório
 * executar o scritp enable-stateless-arch.sh, respondendo suas perguntas e seguindo suas instruções
+* remover /etc/fstab (sim, exatamente)
 * reboot
 
 
