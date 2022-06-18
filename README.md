@@ -59,6 +59,8 @@ O sistema dessa forma será altamente resiliente. De fato, excetuando algo que a
 
 O uso do hook init da forma em que está nesse momento (18 de junho de 2022) já é possível; porem exige um usuário com mínimo conhecimento de shell scritp para le-los, entender o que fazem, e tornar seu sistema de arquivos compatível; base-manager não está completo, portanto não é uma ferramenta usável. Suas funções devem ser desempenhadas manualmente, ou, se você entendeu as abstrações envolvidas e descritas aqui, e conhece bash script, fique a vontade para contribuir. Mesmo quando toda essa ferramenta for terminada, **NÃO SERÁ** indicada para usuários inexperientes. Problemas que exijam conhecimento de pontos de montagem, manipulação do processo de boot e de subvolumes btrfs podem surgir
 
+ **MANTENHA /boot/efi DESMONTADO.**
+
 **Podem haver problemas e incompatibilidades que eu não encontrei nos meus testes, e que podem aparecer somente com o uso de determinados programas, ou combinação de programas.**
 
 **A máquina é sua, o sistema de arquivos é seu, a decisão de usar esses scripts foi sua, portanto os riscos e prejuízos são seus.**
