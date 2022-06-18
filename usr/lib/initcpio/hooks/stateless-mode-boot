@@ -1,0 +1,50 @@
+#!/usr/bin/ash
+
+run_latehook() {
+	local root_mnt="/new_root"
+	
+	local lower_dir_etc="/new_root/etc"
+	local upper_dir_etc="/new_root/user_state/work/state_etc"
+	local work_dir_etc="/new_root/user_state/work/work_etc"
+	
+	local lower_dir_var="/new_root/var"
+	local upper_dir_var="/new_root/user_state/work/state_var"
+	local work_dir_var="/new_root/user_state/work/work_var"
+	
+	local lower_dir_roothome="/new_root/root"
+	local upper_dir_roothome="/new_root/user_state/work/state_roothome"
+	local work_dir_roothome="/new_root/user_state/work/work_roothome"
+	
+	local lower_dir_mnt="/new_root/mnt"
+	local upper_dir_mnt="/new_root/user_state/work/state_mnt"
+	local work_dir_mnt="/new_root/user_state/work/work_mnt"
+
+	local lower_dir_opt="/new_root/opt"
+	local upper_dir_opt="/new_root/user_state/work/state_opt"
+	local work_dir_opt="/new_root/user_state/work/work_opt"
+
+	local lower_dir_srv="/new_root/srv"
+	local upper_dir_srv="/new_root/user_state/work/state_srv"
+	local work_dir_srv="/new_root/user_state/work/work_srv"
+	
+	local lower_dir_srv="/new_root/home"
+	local upper_dir_srv="/new_root/user_state/work/state_home"
+	local work_dir_srv="/new_root/user_state/work/work_home"
+
+
+	
+
+	local real_block_device=$(resolve_device "$root");
+	
+
+	mount "${real_block_device}" -t btrfs -o subvol=@user_state ${root_mnt}/user_state &&
+	
+	mount -t overlay overlay -o lowerdir=${lower_dir_etc},upperdir=${upper_dir_etc},workdir=${work_dir_etc} ${root_mnt}/etc &&	
+	mount -t overlay overlay -o lowerdir=${lower_dir_var},upperdir=${upper_dir_var},workdir=${work_dir_var} ${root_mnt}/var &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_roothome},upperdir=${upper_dir_roothome},workdir=${work_dir_roothome} ${root_mnt}/root &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_mnt},upperdir=${upper_dir_mnt},workdir=${work_dir_mnt} ${root_mnt}/mnt &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_opt},upperdir=${upper_dir_opt},workdir=${work_dir_opt} ${root_mnt}/opt &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${upper_dir_srv},workdir=${work_dir_srv} ${root_mnt}/srv &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${upper_dir_home},workdir=${work_dir_home} ${root_mnt}/home &&
+	echo "sucesso"	
+}
