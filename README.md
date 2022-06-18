@@ -3,7 +3,7 @@ Inspirado em sistemas como o Clear Linux, Fedora SilverBlue e Suse MicroOS, deci
 Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLinux, é possível montar /etc/, /var, /root, /mnt, /home, /opt, /srv, /usr/local/sbin com permissão de leitura e escrita sobre uma raiz read-only (inspirado pelo código de Antynea em https://github.com/Antynea/grub-btrfs).
 É possível fazer isso sobre qualquer sistema de arquivos, porém, com btrfs, se ganha outra capacidade, como se sabe: snapshots baratos.
 
-Com mais uma pequena dose de bash scritp, aliado à capacidade de configurar o pacman de executar rotinas customizadas quaisquer pré operações, ganhamos a capacidade de, via sistema de arquivos, criar commits, a cada modificação de pacotes.
+Com mais uma pequena dose de bash script, aliado à capacidade de configurar o pacman de executar rotinas customizadas quaisquer pré operações, ganhamos a capacidade de, via sistema de arquivos, criar commits, a cada modificação de pacotes.
 A arquitetura do boot consiste então em 3 camadas:
 
 **Primeira camada:** um subvolume btrfs, com permissão de leitura e escrita, onde está instalado o ArchLinux, com todas as pastas do root, **incluindo** /boot (obviamente /boot/efi será um ponto de montagem para fat32 EFI durante a instalação da grub). Essa raiz pode inicialmente possuir configurações mínimas, somente senha root, locales, e os arquivos e modificações necessárias para que esse init-hook funcione.O próprio fstab não precisa ficar aqui. No momento (manhã de 18 de junho de 2022), é necessário um ponto de montagem para o overlay do usuário. Talvez exista como dispensar até mesmo isso, precisa de testes.
