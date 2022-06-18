@@ -12,7 +12,7 @@ A arquitetura do boot consiste então em 3 camadas:
 
 **Terceira camada:** um subvolume btrfs com permissão de leitura e escrita, montado como overlay pelo init, contendo /etc/, /var, /root, /mnt, /home, /opt, /srv e /usr/local/sbin, acima da camada somente leitura anterior. Assim, configurações de serviços, montagem, udev e afins podem ser honradas apropriadamente pelo systemd, na fase 2 da inicialização. Esse subvolume tem o nome explicitamente declarado no init; renomear o subvolume sem mudá-lo em /usr/lib/initcpio/hooks/stateless-mode-boot e reconstruir o init implica em um boot quebrado, mesmo usando o initrd fallback
 
-**ATENÇÃO: esse hook deve ser o último em HOOKS no /etc/mkinitcpio.conf, NÃO é compatível os hooks grub-btrfs-overlayfs e systemd; a combinação com outros hooks não foi testada**
+**ATENÇÃO: esse hook deve ser o último em HOOKS no /etc/mkinitcpio.conf, é compatível com os hooks ativos por padrão no ArchLinux, e NÃO é compatível os hooks grub-btrfs-overlayfs e systemd; a combinação com outros hooks não foi testada**
 
 Quaisquer pontos de montagem declarados /etc/fstab overlay serão honrados normalmente
 
