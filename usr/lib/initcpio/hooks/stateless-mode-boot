@@ -4,47 +4,51 @@ run_latehook() {
 	local root_mnt="/new_root"
 	
 	local lower_dir_etc="/new_root/etc"
-	local upper_dir_etc="/new_root/user_state/work/state_etc"
-	local work_dir_etc="/new_root/user_state/work/work_etc"
 	
 	local lower_dir_var="/new_root/var"
-	local upper_dir_var="/new_root/user_state/work/state_var"
-	local work_dir_var="/new_root/user_state/work/work_var"
 	
 	local lower_dir_roothome="/new_root/root"
-	local upper_dir_roothome="/new_root/user_state/work/state_roothome"
-	local work_dir_roothome="/new_root/user_state/work/work_roothome"
 	
 	local lower_dir_mnt="/new_root/mnt"
-	local upper_dir_mnt="/new_root/user_state/work/state_mnt"
-	local work_dir_mnt="/new_root/user_state/work/work_mnt"
 
 	local lower_dir_opt="/new_root/opt"
-	local upper_dir_opt="/new_root/user_state/work/state_opt"
-	local work_dir_opt="/new_root/user_state/work/work_opt"
 
 	local lower_dir_srv="/new_root/srv"
-	local upper_dir_srv="/new_root/user_state/work/state_srv"
-	local work_dir_srv="/new_root/user_state/work/work_srv"
 	
-	local lower_dir_srv="/new_root/home"
-	local upper_dir_srv="/new_root/user_state/work/state_home"
-	local work_dir_srv="/new_root/user_state/work/work_home"
-
-
-	
+	local lower_dir_home="/new_root/home"
 
 	local real_block_device=$(resolve_device "$root");
-	
+	local root_overlay_lowerdir=$(mktemp -d -p /)
+	local root_overlay_readonly=$(mktemp -d -p /)
+	local user_overlay=$(mktemp -d -p /)
 
-	mount "${real_block_device}" -t btrfs -o subvol=@user_state ${root_mnt}/user_state &&
+	mount --move ${root_mnt} ${root_overlay_lowerdir} &&
+	echo "root movido para lowerdir"
+	mount -t overlay overlay -o lowerdir=${root_overlay_lowerdir}:${root_overlay_readonly} ${root_mnt}
+	echo "overlay readonly montado"
+
+	mount "${real_block_device}" -t btrfs -o subvol=@user_state ${user_overlay} &&
+	mkdir -p ${user_overlay}/etc
+	mkdir -p ${user_overlay}/var
+	mkdir -p ${user_overlay}/roothome
+	mkdir -p ${user_overlay}/mnt
+	mkdir -p ${user_overlay}/opt
+	mkdir -p ${user_overlay}/srv	
+	mkdir -p ${user_overlay}/home
+	mkdir -p ${user_overlay}/work_etc
+	mkdir -p ${user_overlay}/work_var
+	mkdir -p ${user_overlay}/work_roothome
+	mkdir -p ${user_overlay}/work_mnt
+	mkdir -p ${user_overlay}/work_opt
+	mkdir -p ${user_overlay}/work_srv
+	mkdir -p ${user_overlay}/work_home
 	
-	mount -t overlay overlay -o lowerdir=${lower_dir_etc},upperdir=${upper_dir_etc},workdir=${work_dir_etc} ${root_mnt}/etc &&	
-	mount -t overlay overlay -o lowerdir=${lower_dir_var},upperdir=${upper_dir_var},workdir=${work_dir_var} ${root_mnt}/var &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_roothome},upperdir=${upper_dir_roothome},workdir=${work_dir_roothome} ${root_mnt}/root &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_mnt},upperdir=${upper_dir_mnt},workdir=${work_dir_mnt} ${root_mnt}/mnt &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_opt},upperdir=${upper_dir_opt},workdir=${work_dir_opt} ${root_mnt}/opt &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${upper_dir_srv},workdir=${work_dir_srv} ${root_mnt}/srv &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${upper_dir_home},workdir=${work_dir_home} ${root_mnt}/home &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_etc},upperdir=${user_overlay}/etc,workdir=${user_overlay}/work_etc,index=off,metacopy=off ${root_mnt}/etc &&	
+	mount -t overlay overlay -o lowerdir=${lower_dir_var},upperdir=${user_overlay}/var,workdir=${user_overlay}/work_var,index=off,metacopy=off  ${root_mnt}/var &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_roothome},upperdir=${user_overlay}/roothome,workdir=${user_overlay}/work_roothome,index=off,metacopy=off  ${root_mnt}/root &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_mnt},upperdir=${user_overlay}/mnt,workdir=${user_overlay}/work_mnt,index=off,metacopy=off  ${root_mnt}/mnt &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_opt},upperdir=${user_overlay}/opt,workdir=${user_overlay}/work_opt,index=off,metacopy=off  ${root_mnt}/opt &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${user_overlay}/srv,workdir=${user_overlay}/work_srv,index=off,metacopy=off  ${root_mnt}/srv &&
+	mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${user_overlay}/home,workdir=${user_overlay}/work_home,index=off,metacopy=off  ${root_mnt}/home &&
 	echo "sucesso"	
 }
