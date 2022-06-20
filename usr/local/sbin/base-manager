@@ -68,6 +68,7 @@ function bootloader_upgrade_p2(){
     printf "a configuração do bootloader foi atualizada com sucesso" &&\
     umount -Rvl $update_grub_dir
   else
+    umount -Rvl $update_grub_dir
     printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customizações"
   fi
 }
@@ -105,16 +106,13 @@ function restore_root_p2(){
     moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
     mount $block_device_root $restore_dir -o "subvolid="$id_to_restore &&\
-    btrfs su snap -r $default_root @root-deprecated--in--$moment -v &&\
-    btrfs su del $default_root &&\
+    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root-deprecated--in--$moment -v &&\
+    sync &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    btrfs su del $toplevel_dir/$default_root &&\
     btrfs su snap $restore_dir $toplevel_dir/$default_root &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
-    umount -Rl $restore_dir &&\
-    mount $block_device_root $restore_dir -o "subvol="$default_root &&\
-    mount --bind /etc/grub.d $update_grub_dir
-    mount --bind /etc/default/grub $update_grub_dir/etc/default/grub
-    arch-chroot $restore_dir $update_grub_command &&\
     umount -Rl $restore_dir &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
@@ -139,12 +137,19 @@ function help_reset_user_data(){
     Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
     será preservada no commit
     O commit será acessível atravez do comando
-    "btrfs su l -st /user_state | grep user-state-deprecated-",
+    "btrfs su l -st / | grep user-state-deprecated-" se usado de dentro de --provide-rw-root
     e conterá ao final a data e hora em que --reset-user-data for usado.
     Deletar esse tipo de commit é com você 
 
 "
 }
+########################################################################################################################
+function reset_user_data(){
+    moment=$(date +%Y-%m-%d--%T)
+    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+    mv $toplevel_dir/$default_user_data $toplevel_dir/user-state-deprecated-in--$moment -v
+    printf
+  }
 ########################################################################################################################
 function help_provide_rw_root(){
  printf "
@@ -199,15 +204,8 @@ printf "Entrando em chroot"
       arch-chroot $edit_base_dir
 }
 ##############################################-global-vars-#############################################################
-toplevel_dir=$(mktemp -d -p /tmp)
-update_grub_dir=$(mktemp -d -p /tmp)
-restore_dir=$(mktemp -d -p /tmp)
-edit_base_dir=$(mktemp -d -p /tmp)
-update_dir=$(mktemp -d -p /tmp)
-block_device_root=$(df -P /user_state | tail -n 1 | awk '/.*/ { print $1 }')
-update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
-default_root="@user_root"
-default_cache="@user_cache"
+source source-base-manager
+default_user_data="@user_state"
 ##############################################-start-menu-and-asks-#####################################################
       case $@ in
       --help)
