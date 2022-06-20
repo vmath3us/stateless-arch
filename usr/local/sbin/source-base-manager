@@ -1,0 +1,12 @@
+toplevel_dir=$(mktemp -d -p /tmp)
+update_grub_dir=$(mktemp -d -p /tmp)
+restore_dir=$(mktemp -d -p /tmp)
+edit_base_dir=$(mktemp -d -p /tmp)
+update_dir=$(mktemp -d -p /tmp)
+update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
+############################################################################################################################################
+########################################-user-complete-data-######################################################################
+block_device_root=""
+default_root=""
+default_cache=""
+
