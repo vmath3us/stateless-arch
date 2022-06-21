@@ -1,0 +1,351 @@
+#!/bin/bash
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+#################################################--global-vars--########################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+toplevel_dir=$(mktemp -d -p /tmp)
+update_grub_dir=$(mktemp -d -p /tmp)
+restore_dir=$(mktemp -d -p /tmp)
+edit_base_dir=$(mktemp -d -p /tmp)
+update_dir=$(mktemp -d -p /tmp)
+update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
+
+########################################################################################################################
+########################################################################################################################
+########################################--user-complete-data-in-implementation--########################################
+########################################################################################################################
+########################################################################################################################
+#######################################---change-change-inside-the-quotes---############################################
+########################################################################################################################
+########################################################################################################################
+
+block_device_root="name_block_device_here"
+pacman_dir="@base_system"
+
+########################################################################################################################
+########################################################################################################################
+##########################--please-edit-here-and-in-/usr/lib/initcpio/hooks/stateless-mode-boot--#######################
+########################################################################################################################
+########################################################################################################################
+#########################################---change-change-inside-the-quotes---##########################################
+########################################################################################################################
+########################################################################################################################
+
+default_user_data="@user_state"
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+function display_functions(){
+printf "
+      Funções disponíveis
+           --help
+           --bootloader-update
+           --restore-root
+           --reset-user-data
+           --provide-rw-root
+
+"
+}
+function ident(){
+  printf "
+
+-----------------------------------------------------------------------------------------------------------------------
+
+"
+}
+
+function text_help_global(){
+     ident
+     help_bootloader_update
+     ident
+     help_restore_root
+     ident
+     help_reset_user_data
+     ident
+     help_provide_rw_root
+     ident
+
+  printf "
+  PS: todas as operações aqui descritas são diretamente no sistema de arquivos,
+  portanto precisam de permissões elevadas, e por longo período.
+  Use esse utilitário como root
+
+  "
+    ident
+}
+
+function help_global (){
+  text_help_global | less
+}
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+function help_bootloader_update(){
+  printf "
+  --bootloader-update
+  
+  Adicione e remova parâmetros de kernel, ou outras customizações que queira,
+  em /etc/default/grub, ou /etc/grub.d, conforme a documentação oficial.
+  Você deve editar o SEU /etc/default/grub, não via --provide-rw-root,
+  e usar "base-manager --bootloader-update" também FORA de --provide-rw-root.
+  Pode ser usado após --restore-root
+  "
+
+}
+
+########################################################################################################################
+
+function bootloader_update(){
+  moment=$(date +%Y-%m-%d--%T)
+  mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+  btrfs su snap -r $toplevel_dir/$pacman_dir $toplevel_dir/@pre-update-grub-in--$moment
+  mount $block_device_root $update_grub_dir -o "subvol="$pacman_dir &&\
+      mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
+      mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
+      mount --bind /etc/default/grub $edit_base_dir/etc/default/grub &&\
+      mount --bind /etc/default/grub-btrfs/ $edit_base_dir/etc/default/grub-btrfs/ &&\
+      mount --bind /etc/pacman.d/ $edit_base_dir/etc/pacman.d &&\
+      mount --bind /etc/pacman.conf $edit_base_dir/etc/pacman.conf &&\
+      mount --bind /etc/mkinitcpio.conf $edit_base_dir/etc/mkinitcpio.conf &&\
+      mount --bind /etc/mkinitcpio.d $edit_base_dir/etc/mkinitcpio.d &&\
+  echo "entrando em ambiente chroot" &&\
+  bootloder_upgrade_p2
+}
+
+function bootloader_upgrade_p2(){
+  arch-chroot $update_dir $update_grub_command
+  if [ $? -eq 0 ] ; then
+    printf "a configuração do bootloader foi atualizada com sucesso" &&\
+    umount -Rv $update_grub_dir
+  else
+    umount -Rv $update_grub_dir
+    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customizações"
+  fi
+}
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+function help_restore_root(){
+printf "
+  --restore-root
+
+  Abre um menu com a lista de commits do root
+  Escolha um deles, aguarde o fim da operação,
+  e será a nova raiz padrão no próximo início do sistema
+
+  
+  "
+}
+
+########################################################################################################################
+
+function restore_root(){
+printf "
+           será exibida a lista de commits do root gerados durante atualizações,
+           pré --bootloader-upgrade e pré --provide-rw-root.
+           Informe abaixo o ID do subvolume que deseja restaurar
+           Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
+           ATENÇÃO: se você está usando outra ferramenta para os snapshots, use-a, e não esse scritp"
+           read -p "Prosseguir? (y/N): " confirm_restore
+           case $confirm_restore in
+                 y|Y)
+                mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+                btrfs su l -s $toplevel_dir | grep -e commit-root -e provide-rw
+                read -p "restaurar commit ID: " id_to_restore
+                restore_root_p2
+                 ;;
+                 *)
+                printf "restauração cancelada, saindo com status de erro"
+                exit 1
+          esac
+}
+
+function restore_root_p2(){
+    moment=$(date +%Y-%m-%d--%T)
+    mount $block_device_root $restore_dir -o "subvolid="$id_to_restore &&\
+    btrfs su snap -r $toplevel_dir/$pacman_dir $toplevel_dir/@root-deprecated--in--$moment &&\
+    sync &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    btrfs su del $toplevel_dir/$pacman_dir &&\
+    btrfs su snap $restore_dir $toplevel_dir/$pacman_dir &&\
+    sync &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    umount -Rl $restore_dir &&\
+    sync &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    umount -Rl $toplevel_dir &&\
+printf "restauração concluída, reinicie para usar"
+    exit 0
+}
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+function help_reset_user_data(){
+  printf "
+  --reset-user-data
+  
+    Todo o conteúdo de /etc, /var, /mnt , /opt, /srv, /root, /usr/local e /home
+    será movido para um commit, recursivamente.
+    O conteúdo dos pontos de montagem customizados sobre esses diretórios não serão afetados,
+    porém eles não serão acessiveis a partir do próximo boot, afinal o fstab irá mudar.
+    Caso você tenha trocado a senha root, pode ser uma boa hora para criar uma nova
+    diretamente na base usando --provide-rw-root
+    A respeito do seu usuário:
+    Se você tiver criado diretamente na base, ele ainda existirá,
+    com a senha, grupos e tudo mais que foi gravada na base.
+    Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
+    será preservada no commit
+    O commit será acessível atravez do comando
+    "btrfs su l -st / | grep user-state-deprecated-" se usado de dentro de --provide-rw-root
+    e conterá ao final a data e hora em que --reset-user-data for usado.
+    Deletar esse tipo de commit é com você 
+
+"
+}
+
+########################################################################################################################
+
+function reset_user_data(){
+    moment=$(date +%Y-%m-%d--%T)
+    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+    mv $toplevel_dir/$default_user_data $toplevel_dir/@user-state-deprecated-in--$moment -v
+    printf "
+    criando novo subvolume para dados de usuário...
+    "
+    btrfs su cr $toplevel_dir/$default_user_data
+    printf "
+    Dados de usuário movidos com sucesso, deletá-los completamente é sua responsabilidade
+    "
+}
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+function help_provide_rw_root(){
+ printf "
+  --provide-rw-root
+
+  Só deve ser usado em casos especiais.
+  Instale  e remova programas via pac-base,
+  e edite arquivos de configuração normalmente em seu próprio /etc.
+  Fazendo dessa forma você garantirá que um --reset-user-data
+  retorne todos os pacotes aos padrões mais recentes do repositório
+
+
+  O --provide-rw-root consiste em um terminal chroot onde é possível
+  editar arquivos DA RAIZ PADRÃO ATUAL. Um commit será gerado antes.
+  É possível integrar programas, remover programas,
+  adicionar módulos de kernel,ou qualquer operação que esteja documentada na wiki.
+  Não necessáriamente exige reinício, depende do que for modificado.
+  Se as mudanças não forem revertidas,com o tempo serão propagadas
+  para todos os commits de atualização
+
+                                      ATENÇÃO         
+                Essa função NÃO é necessária para editar a cmdline do kernel
+                            edite normalmente seu /etc/default/gub
+                                  e regere o grub.cfg
+                          usando base-manager --bootloader-upgrade
+              
+                                    IMPORTANTE
+
+          COnfigurações inseridas diretamente na base NÃO SERÃO limpas por --reset-user-data
+
+************************************************************************************************************
+            Não existe sistema, ou implementação, a prova de burrice, então seja cauteloso
+*************************************************************************************************************
+
+"
+}
+
+########################################################################################################################
+
+function provide_rw_root (){
+      moment=$(date +%Y-%m-%d--%T)
+      mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+      btrfs su snap -r $toplevel_dir/$pacman_dir $toplevel_dir/@pre--provide-rw-root-in-$moment &&\
+      btrfs filesystem sync $toplevel_dir &&\
+      mount $block_device_root $edit_base_dir -o "subvol="$pacman_dir &&\
+      mount $block_device_root $edit_base_dir/var/cache -o "subvol="$default_cache &&\
+      mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
+      mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
+      mount --bind /etc/default/grub $edit_base_dir/etc/default/grub &&\
+      mount --bind /etc/default/grub-btrfs $edit_base_dir/etc/default/grub-btrfs &&\
+      mount --bind /etc/pacman.d/ $edit_base_dir/etc/pacman.d &&\
+      mount --bind /etc/pacman.conf $edit_base_dir/etc/pacman.conf &&\
+      mount --bind /etc/mkinitcpio.conf $edit_base_dir/etc/mkinitcpio.conf &&\
+      mount --bind /etc/mkinitcpio.d $edit_base_dir/etc/mkinitcpio.d &&\
+printf "Atualizando bootloader" &&\
+      arch-chroot $edit_base_dir $update_grub_command &&\
+printf "Entrando em chroot"
+      arch-chroot $edit_base_dir
+}
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+##############################################--start-menu-and-asks--###################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+      case $@ in
+      --help)
+            help_global
+      ;;
+      --bootloader-update)
+            clear
+            help_bootloader_update
+              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
+                 case $terms_use_root_manager in
+                   *)
+                     bootloader_update
+                     ;;
+                   esac
+      ;;
+      --restore-root)
+            clear
+            help_restore_root
+              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
+                  case $terms_use_root_manager in
+                    *)
+                      restore_root
+                      ;;
+                    esac
+      ;;
+      --reset-user-data)
+            clear
+            help_reset_user_data
+              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
+                  case $terms_use_root_manager in
+                    *)
+                      reset_user_data
+                      ;;
+                    esac
+      ;;
+      --provide-rw-root)
+            clear
+            help_provide_rw_root
+              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
+                 case $terms_use_root_manager in
+                   *)
+                     provide_rw_root
+                     ;;
+                 esac
+      ;;
+                    *)
+         display_functions
+          exit 0
+          ;;
+      esac
