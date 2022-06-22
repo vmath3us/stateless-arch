@@ -26,11 +26,11 @@ run_latehook() {
 
 	local real_block_device=$(resolve_device "$root");
 
-	local root_overlay_lowerdir=$(mktemp 1-root-XXX -d -p /)
+	local root_overlay_lowerdir=$(mktemp -d -p /)
 
-	local root_overlay_readonly=$(mktemp 2-readonly-XXX -d -p /)
+	local root_overlay_readonly=$(mktemp -d -p /)
 
-	local user_overlay=$(mktemp 3-user-XXX -d -p /)
+	local user_overlay=$(mktemp -d -p /)
 
 	mount --move ${root_mnt} ${root_overlay_lowerdir} &&
 
