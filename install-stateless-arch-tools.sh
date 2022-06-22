@@ -58,7 +58,7 @@ function manage_files(){
 function last_chance (){
 time=15
 while [ $time -ge 1 ] ; do
-
+  clear
   printf "arquivos adaptados, iniciando manupulação de subvolumes em $time segundos, ctrl-c para cancelar" 
   sleep 1s
   let "time--" 
@@ -89,15 +89,18 @@ function copy_scripts_to_root(){
   chmod a+x /usr/lib/initcpio/install/stateless-mode-boot &&\
   end_implementation
 }
-function edit_hooks_line_vars (){
+function end_implementation (){
   btrfs su cr $toplevel_dir/$default_user_data &&
   printf "
   O sistema de arquivos foi preparado, e os scripts estão nos locais e com as permissões corretas
-  edite seu /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot.
-  edite seu /etc/pacman.conf, descomentando a linha HookDir
+  edite /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot.
   Regere o init com mkinitcpio -P
   Em seguida, (se efi), monte sua partição efi em /boot/efi.
   INSTALE e ATUALIZE a grub e reinicie
+  Após o sistema iniciado, edite seu /etc/pacman.conf, descomentando a linha HookDir
+  Para iniciar sem stateless-mode-boot, aperte c no menu de boot,
+  e adicione, ao final da linha do kernel
+  disablehooks=stateless-boot-mode
 "
   exit 0
 }
