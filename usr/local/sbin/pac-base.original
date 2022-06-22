@@ -15,7 +15,7 @@ block_device_root="name_block_device_here"
       arch_chroot
 }
 function arch_chroot(){
-  arch-chroot $pacman_dir pacman $command_pacman &&\
+  arch-chroot $pacman_dir pacman $command_pacman
   umount -Rv $pacman_dir
 }
 command_pacman=$@
