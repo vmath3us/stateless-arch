@@ -1,10 +1,27 @@
 #!/bin/bash
-function commit_root(){
-toplevel_dir=$(mktemp -d -p /tmp)
-moment=$(date +%Y-%m-%d--%T)
-block_device_root="/dev/sda3/"
-mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-btrfs su snap -r / $toplevel_dir/@commit-root-in--$moment &&\
-grub-mkconfig -o /boot/grub/grub.cfg
+function verify_lock_file(){
+    if [ ! -f "/tmp/onbootfirstcommit.lock" ] ; then
+      touch /tmp/onbootfirstcommit.lock &&\
+      boot_first
+    else
+      commit_root
+    fi
 }
-commit_root
+function boot_first(){
+  toplevel_dir=$(mktemp -d -p /tmp)
+  moment=$(date +%Y-%m-%d--%T)
+    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+    btrfs su snap -r / $toplevel_dir/@commit-root-in--$moment &&\
+    btrfs filesystem sync / &&\
+    grub-mkconfig -o /boot/grub/grub.cfg
+}
+function commit_root(){
+  toplevel_dir=$(mktemp -d -p /tmp)
+  moment=$(date +%Y-%m-%d--%T)
+    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+    btrfs su snap -r / $toplevel_dir/@commit-prepacman-in--$moment &&\
+    btrfs filesystem sync / &&\
+    grub-mkconfig -o /boot/grub/grub.cfg
+}
+block_device_root="name_block_device_here"
+verify_lock_file
