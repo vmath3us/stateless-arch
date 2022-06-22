@@ -19,19 +19,19 @@ update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 ########################################--user-complete-data-in-implementation--########################################
 ########################################################################################################################
 ########################################################################################################################
-#######################################---change-change-inside-the-quotes---############################################
+#######################################--change-inside-the-quotes---############################################
 ########################################################################################################################
 ########################################################################################################################
 
 block_device_root="name_block_device_here"
-pacman_dir="@base_system"
+default_root="@base_system"
 
 ########################################################################################################################
 ########################################################################################################################
 ##########################--please-edit-here-and-in-/usr/lib/initcpio/hooks/stateless-mode-boot--#######################
 ########################################################################################################################
 ########################################################################################################################
-#########################################---change-change-inside-the-quotes---##########################################
+#########################################--change-inside-the-quotes---##########################################
 ########################################################################################################################
 ########################################################################################################################
 
@@ -106,8 +106,8 @@ function help_bootloader_update(){
 function bootloader_update(){
   moment=$(date +%Y-%m-%d--%T)
   mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-  btrfs su snap -r $toplevel_dir/$pacman_dir $toplevel_dir/@pre-update-grub-in--$moment
-  mount $block_device_root $update_grub_dir -o "subvol="$pacman_dir &&\
+  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@pre-update-grub-in--$moment
+  mount $block_device_root $update_grub_dir -o "subvol="$default_root &&\
       mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
       mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
       mount --bind /etc/default/grub $edit_base_dir/etc/default/grub &&\
@@ -160,7 +160,7 @@ printf "
            case $confirm_restore in
                  y|Y)
                 mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-                btrfs su l -s $toplevel_dir | grep -e commit-root -e provide-rw
+                btrfs su l -s $toplevel_dir | grep -e commit-root -e commit-prepacman -e provide-rw
                 read -p "restaurar commit ID: " id_to_restore
                 restore_root_p2
                  ;;
@@ -173,11 +173,11 @@ printf "
 function restore_root_p2(){
     moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $restore_dir -o "subvolid="$id_to_restore &&\
-    btrfs su snap -r $toplevel_dir/$pacman_dir $toplevel_dir/@root-deprecated--in--$moment &&\
+    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root-deprecated--in--$moment &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
-    btrfs su del $toplevel_dir/$pacman_dir &&\
-    btrfs su snap $restore_dir $toplevel_dir/$pacman_dir &&\
+    btrfs su del $toplevel_dir/$default_root &&\
+    btrfs su snap $restore_dir $toplevel_dir/$default_root &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
     umount -Rl $restore_dir &&\
@@ -196,10 +196,11 @@ function help_reset_user_data(){
   printf "
   --reset-user-data
   
-    Todo o conteúdo de /etc, /var, /mnt , /opt, /srv, /root, /usr/local e /home
-    será movido para um commit, recursivamente.
+    Todo o conteúdo de /etc, /var, /mnt , /opt, /srv, /root, /usr/local, /usr/lib/systemd e /home
+    presente no overlay será movido para um commit, recursivamente.
     O conteúdo dos pontos de montagem customizados sobre esses diretórios não serão afetados,
-    porém eles não serão acessiveis a partir do próximo boot, afinal o fstab irá mudar.
+    porém eles não serão acessiveis a partir do próximo boot, se o fstab estiver
+    no overlay e não diretamente na base.
     Caso você tenha trocado a senha root, pode ser uma boa hora para criar uma nova
     diretamente na base usando --provide-rw-root
     A respeito do seu usuário:
@@ -210,7 +211,8 @@ function help_reset_user_data(){
     O commit será acessível atravez do comando
     "btrfs su l -st / | grep user-state-deprecated-" se usado de dentro de --provide-rw-root
     e conterá ao final a data e hora em que --reset-user-data for usado.
-    Deletar esse tipo de commit é com você 
+    Esse tipo de commit possui informações sensíveis, como chaves ssh e senhas wifi,
+    portanto deletá-los é responsabilidade do usuário.
 
 "
 }
@@ -250,8 +252,7 @@ function help_provide_rw_root(){
   É possível integrar programas, remover programas,
   adicionar módulos de kernel,ou qualquer operação que esteja documentada na wiki.
   Não necessáriamente exige reinício, depende do que for modificado.
-  Se as mudanças não forem revertidas,com o tempo serão propagadas
-  para todos os commits de atualização
+  Mudanças que não forem revertidas serão inclusas nos próximos seguintes.
 
                                       ATENÇÃO         
                 Essa função NÃO é necessária para editar a cmdline do kernel
@@ -275,9 +276,9 @@ function help_provide_rw_root(){
 function provide_rw_root (){
       moment=$(date +%Y-%m-%d--%T)
       mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-      btrfs su snap -r $toplevel_dir/$pacman_dir $toplevel_dir/@pre--provide-rw-root-in-$moment &&\
+      btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@pre--provide-rw-root-in-$moment &&\
       btrfs filesystem sync $toplevel_dir &&\
-      mount $block_device_root $edit_base_dir -o "subvol="$pacman_dir &&\
+      mount $block_device_root $edit_base_dir -o "subvol="$default_root &&\
       mount $block_device_root $edit_base_dir/var/cache -o "subvol="$default_cache &&\
       mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
       mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
