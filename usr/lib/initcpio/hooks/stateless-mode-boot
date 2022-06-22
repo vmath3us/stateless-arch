@@ -7,7 +7,9 @@ run_latehook() {
 	local root_mnt="/new_root"
 	
 	local lower_dir_etc="/new_root/etc"
-	
+
+	local lower_dir_systemd="/new_root/usr/lib/systemd"
+
 	local lower_dir_var="/new_root/var"
 	
 	local lower_dir_roothome="/new_root/root"
@@ -24,11 +26,11 @@ run_latehook() {
 
 	local real_block_device=$(resolve_device "$root");
 
-	local root_overlay_lowerdir=$(mktemp -d -p /)
+	local root_overlay_lowerdir=$(mktemp 1-root-XXX -d -p /)
 
-	local root_overlay_readonly=$(mktemp -d -p /)
+	local root_overlay_readonly=$(mktemp 2-readonly-XXX -d -p /)
 
-	local user_overlay=$(mktemp -d -p /)
+	local user_overlay=$(mktemp 3-user-XXX -d -p /)
 
 	mount --move ${root_mnt} ${root_overlay_lowerdir} &&
 
@@ -40,6 +42,7 @@ run_latehook() {
 
 	mount "${real_block_device}" -t btrfs -o subvol=${user_state_subvol} ${user_overlay} &&
 	mkdir -p ${user_overlay}/etc -v
+	mkdir -p ${user_overlay}/systemd -v
 	mkdir -p ${user_overlay}/var -v
 	mkdir -p ${user_overlay}/roothome -v
 	mkdir -p ${user_overlay}/usrlocal -v
@@ -48,6 +51,7 @@ run_latehook() {
 	mkdir -p ${user_overlay}/srv -v
 	mkdir -p ${user_overlay}/home -v
 	mkdir -p ${user_overlay}/work_etc -v
+	mkdir -p ${user_overlay}/work_systemd -v
 	mkdir -p ${user_overlay}/work_var -v
 	mkdir -p ${user_overlay}/work_roothome -v
 	mkdir -p ${user_overlay}/work_usrlocal -v
@@ -59,6 +63,8 @@ run_latehook() {
   echo "diretórios overlay do usuário verificados" &&
 	
 	mount -t overlay overlay -o lowerdir=${lower_dir_etc},upperdir=${user_overlay}/etc,workdir=${user_overlay}/work_etc,index=off,metacopy=off ${root_mnt}/etc &&	
+	mount -t overlay overlay -o lowerdir=${lower_dir_systemd},upperdir=${user_overlay}/systemd,workdir=${user_overlay}/work_systemd,index=off,metacopy=off ${root_mnt}/usr/lib/systemd &&	
+  echo "overlay crítico sobre usr-lib-systemd montado" &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_var},upperdir=${user_overlay}/var,workdir=${user_overlay}/work_var,index=off,metacopy=off  ${root_mnt}/var &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_roothome},upperdir=${user_overlay}/roothome,workdir=${user_overlay}/work_roothome,index=off,metacopy=off  ${root_mnt}/root &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_usrlocal},upperdir=${user_overlay}/usrlocal,workdir=${user_overlay}/work_usrlocal,index=off,metacopy=off  ${root_mnt}/usr/local &&
