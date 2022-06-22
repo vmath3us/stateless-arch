@@ -80,7 +80,7 @@ function copy_scripts_to_root(){
   mv usr/local/sbin/commit-root /usr/local/sbin/commit-root &&\
   mv usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   mv usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
-  mv etc/pacman.d/hooks/01_commit-root.hook /etc/pacman.d/hooks/01_commit-root.hook &&\
+  mv etc/pacman.d/hooks/01-commit-root.hook /etc/pacman.d/hooks/01-commit-root.hook &&\
   chmod a+x /usr/local/sbin/base-manager &&\
   chmod a+x /usr/local/sbin/pac-base &&\
   chmod a+x /usr/local/sbin/commit-root &&\
