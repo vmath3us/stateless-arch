@@ -75,12 +75,13 @@ function mount_device_to_manage_subvols(){
     copy_scripts_to_root
 }
 function copy_scripts_to_root(){
-  mv usr/local/sbin/base-manager /usr/local/sbin/base-manager &&\
-  mv usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
-  mv usr/local/sbin/commit-root /usr/local/sbin/commit-root &&\
-  mv usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
-  mv usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
-  mv etc/pacman.d/hooks/01-commit-root.hook /etc/pacman.d/hooks/01-commit-root.hook &&\
+  cp usr/local/sbin/base-manager /usr/local/sbin/base-manager &&\
+  cp usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
+  cp usr/local/sbin/commit-root /usr/local/sbin/commit-root &&\
+  cp usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
+  cp usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
+  mkdir -p /etc/pacman.d/hooks &&\
+  cp etc/pacman.d/hooks/01-commit-root.hook /etc/pacman.d/hooks/01-commit-root.hook &&\
   chmod a+x /usr/local/sbin/base-manager &&\
   chmod a+x /usr/local/sbin/pac-base &&\
   chmod a+x /usr/local/sbin/commit-root &&\
@@ -93,7 +94,8 @@ function edit_hooks_line_vars (){
   printf "
   O sistema de arquivos foi preparado, e os scripts estão nos locais e com as permissões corretas
   edite seu /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot.
-  Regere o init.
+  edite seu /etc/pacman.conf, descomentando a linha HookDir
+  Regere o init com mkinitcpio -P
   Em seguida, (se efi), monte sua partição efi em /boot/efi.
   INSTALE e ATUALIZE a grub e reinicie
 "
