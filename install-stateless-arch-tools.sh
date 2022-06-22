@@ -1,4 +1,12 @@
 #!/bin/bash
+function welcome (){
+  printf "
+  ###############################################################################################
+                                  Stateless-Arch
+  ###############################################################################################
+"
+check_user
+}
 function check_user (){
   user=$(whoami)
   if [ "$user" != "root" ] ; then
@@ -59,6 +67,7 @@ function last_chance (){
 time=15
 while [ $time -ge 1 ] ; do
   clear
+  welcome
   printf "arquivos adaptados, iniciando manupulação de subvolumes em $time segundos, ctrl-c para cancelar" 
   sleep 1s
   let "time--" 
@@ -111,4 +120,4 @@ subvol_to_move=$(grub-mkrelpath /)
 toplevel_dir=$(mktemp -d -p /tmp)
 default_root="@base_system"
 default_user_data="@user_state"
-check_filesystem
+welcome
