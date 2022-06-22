@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type= Path
+Target= *
+[Action]
+Description = Commit Root
+When = PreTransaction
+Exec = /usr/local/sbin/commit-root
+AbortOnFail
