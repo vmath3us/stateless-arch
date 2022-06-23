@@ -66,9 +66,7 @@ function manage_files(){
 function last_chance (){
 time=15
 while [ $time -ge 1 ] ; do
-  clear
-  welcome
-  printf "arquivos adaptados, iniciando manupulação de subvolumes em $time segundos, ctrl-c para cancelar" 
+  echo "arquivos adaptados, iniciando manupulação de subvolumes em $time segundos, ctrl-c para cancelar" 
   sleep 1s
   let "time--" 
 done
