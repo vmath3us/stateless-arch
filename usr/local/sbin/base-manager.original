@@ -11,15 +11,14 @@ toplevel_dir=$(mktemp -d -p /tmp)
 update_grub_dir=$(mktemp -d -p /tmp)
 restore_dir=$(mktemp -d -p /tmp)
 edit_base_dir=$(mktemp -d -p /tmp)
-update_dir=$(mktemp -d -p /tmp)
 update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 
 ########################################################################################################################
 ########################################################################################################################
-########################################--user-complete-data-in-implementation--########################################
+##################################--user-complete-data-in-implementation--##############################################
 ########################################################################################################################
 ########################################################################################################################
-#######################################--change-inside-the-quotes---############################################
+#######################################--change-inside-the-quotes---####################################################
 ########################################################################################################################
 ########################################################################################################################
 
@@ -30,8 +29,8 @@ default_root="@base_system"
 ########################################################################################################################
 ##########################--please-edit-here-and-in-/usr/lib/initcpio/hooks/stateless-mode-boot--#######################
 ########################################################################################################################
-########################################################################################################################
-#########################################--change-inside-the-quotes---##########################################
+########################################################################################################################:
+#########################################--change-inside-the-quotes---##################################################
 ########################################################################################################################
 ########################################################################################################################
 
@@ -108,16 +107,16 @@ function bootloader_update(){
   mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
   btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@pre-update-grub-in--$moment
   mount $block_device_root $update_grub_dir -o "subvol="$default_root &&\
-      mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
-      mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
-      mount --bind /etc/default/grub $edit_base_dir/etc/default/grub &&\
-      mount --bind /etc/default/grub-btrfs/ $edit_base_dir/etc/default/grub-btrfs/ &&\
-      mount --bind /etc/pacman.d/ $edit_base_dir/etc/pacman.d &&\
-      mount --bind /etc/pacman.conf $edit_base_dir/etc/pacman.conf &&\
-      mount --bind /etc/mkinitcpio.conf $edit_base_dir/etc/mkinitcpio.conf &&\
-      mount --bind /etc/mkinitcpio.d $edit_base_dir/etc/mkinitcpio.d &&\
+      mount --bind /usr/local/ $update_grub_dir/usr/local/ &&\
+      mount --bind /etc/grub.d $update_grub_dir/etc/grub.d &&\
+      mount --bind /etc/default/grub $update_grub_dir/etc/default/grub &&\
+      mount --bind /etc/default/grub-btrfs/ $update_grub_dir/etc/default/grub-btrfs/ &&\
+      mount --bind /etc/pacman.d/ $update_grub_dir/etc/pacman.d &&\
+      mount --bind /etc/pacman.conf $update_grub_dir/etc/pacman.conf &&\
+      mount --bind /etc/mkinitcpio.conf $update_grub_dir/etc/mkinitcpio.conf &&\
+      mount --bind /etc/mkinitcpio.d $update_grub_dir/etc/mkinitcpio.d &&\
   echo "entrando em ambiente chroot" &&\
-  bootloder_upgrade_p2
+  bootloader_upgrade_p2
 }
 
 function bootloader_upgrade_p2(){
