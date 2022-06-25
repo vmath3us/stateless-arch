@@ -1,5 +1,5 @@
 # Stateless Arch <h1>
-**(25/jun/2022, segundo beta disponível)**
+**(25/jun/2022, v0.2-beta disponível)**
 
 Inspirado em sistemas como o Clear Linux, Fedora SilverBlue e Suse MicroOS, decidi tentar trazer algo semelhante a eles para o ArchLinux. Essa ferramenta visa permitir que um rm -rf --no-preserve-root não seja catastrófico, pelo contrário, limpe todas as suas configurações, e traga o sistema para um ponto conhecido, atualizado, onde estejam somente os programas e configurações padrões do repositório. 
 Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLinux, é possível montar /etc/, /var, /root, /mnt, /home, /opt, /srv, /usr/local e /usr/lib/systemd com permissão de leitura e escrita sobre uma raiz read-only (inspirado pelo código de Antynea em https://github.com/Antynea/grub-btrfs).
