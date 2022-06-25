@@ -5,6 +5,7 @@ default_root="@base_system"
 block_device_root="name_block_device_here"
       mount $block_device_root $pacman_dir -o "subvol="$default_root &&\
       mount --bind /usr/local/ $pacman_dir/usr/local/ &&\
+      mount --bind /var/cache/pacman/pkg $pacman_dir/var/cache/pacman/pkg &&\
       mount --bind /etc/grub.d $pacman_dir/etc/grub.d &&\
       mount --bind /etc/default/grub $pacman_dir/etc/default/grub &&\
       mount --bind /etc/default/grub-btrfs $pacman_dir/etc/default/grub-btrfs &&\
@@ -15,8 +16,8 @@ block_device_root="name_block_device_here"
       arch_chroot
 }
 function arch_chroot(){
-  arch-chroot $pacman_dir pacman $command_pacman
-  umount -Rv $pacman_dir
+  arch-chroot $pacman_dir pacman $command_pacman &&
+  umount -Rv $pacman_dir || umount -Rv $pacman_dir
 }
 command_pacman=$@
 pac-base
