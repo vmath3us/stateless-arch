@@ -105,7 +105,7 @@ function help_bootloader_update(){
 function bootloader_update(){
   moment=$(date +%Y-%m-%d--%T)
   mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@pre-update-grub-in--$moment
+  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-update-grub--$moment
   mount $block_device_root $update_grub_dir -o "subvol="$default_root &&\
       mount --bind /usr/local/ $update_grub_dir/usr/local/ &&\
       mount --bind /etc/grub.d $update_grub_dir/etc/grub.d &&\
@@ -120,13 +120,13 @@ function bootloader_update(){
 }
 
 function bootloader_upgrade_p2(){
-  arch-chroot $update_dir $update_grub_command
+  arch-chroot $update_grub_dir $update_grub_command
   if [ $? -eq 0 ] ; then
-    printf "a configuração do bootloader foi atualizada com sucesso" &&\
-    umount -Rv $update_grub_dir
+    umount -Rv $update_grub_dir &&\
+    printf "a configuração do bootloader foi atualizada com suceo"
   else
-    umount -Rv $update_grub_dir
-    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customizações"
+    umount -Rv $update_grub_dir &&\
+    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customiza"
   fi
 }
 
@@ -159,7 +159,7 @@ printf "
            case $confirm_restore in
                  y|Y)
                 mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-                btrfs su l -s $toplevel_dir | grep -e commit-root -e commit-prepacman -e provide-rw
+                btrfs su l -s $toplevel_dir | grep commit-root--
                 read -p "restaurar commit ID: " id_to_restore
                 restore_root_p2
                  ;;
@@ -172,17 +172,17 @@ printf "
 function restore_root_p2(){
     moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $restore_dir -o "subvolid="$id_to_restore &&\
-    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root-deprecated--in--$moment &&\
+    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root--deprecated--$moment &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
     btrfs su del $toplevel_dir/$default_root &&\
     btrfs su snap $restore_dir $toplevel_dir/$default_root &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
-    umount -Rl $restore_dir &&\
+    umount -Rv $restore_dir &&\
     sync &&\
     btrfs filesystem sync $toplevel_dir &&\
-    umount -Rl $toplevel_dir &&\
+    umount -Rv $toplevel_dir &&\
 printf "restauração concluída, reinicie para usar"
     exit 0
 }
@@ -208,7 +208,7 @@ function help_reset_user_data(){
     Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
     será preservada no commit
     O commit será acessível atravez do comando
-    "btrfs su l -st / | grep user-state-deprecated-" se usado de dentro de --provide-rw-root
+    "btrfs su l -st / | grep user-state--deprecated--" se usado de dentro de --provide-rw-root
     e conterá ao final a data e hora em que --reset-user-data for usado.
     Esse tipo de commit possui informações sensíveis, como chaves ssh e senhas wifi,
     portanto deletá-los é responsabilidade do usuário.
@@ -221,11 +221,11 @@ function help_reset_user_data(){
 function reset_user_data(){
     moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-    mv $toplevel_dir/$default_user_data $toplevel_dir/@user-state-deprecated-in--$moment -v
+    mv $toplevel_dir/$default_user_data $toplevel_dir/@user-state--deprecated--$moment -v &&
     printf "
     criando novo subvolume para dados de usuário...
-    "
-    btrfs su cr $toplevel_dir/$default_user_data
+    " &&
+    btrfs su cr $toplevel_dir/$default_user_data &&
     printf "
     Dados de usuário movidos com sucesso, deletá-los completamente é sua responsabilidade
     "
@@ -275,11 +275,11 @@ function help_provide_rw_root(){
 function provide_rw_root (){
       moment=$(date +%Y-%m-%d--%T)
       mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-      btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@pre--provide-rw-root-in-$moment &&\
+      btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-rw-root--$moment &&\
       btrfs filesystem sync $toplevel_dir &&\
       mount $block_device_root $edit_base_dir -o "subvol="$default_root &&\
-      mount $block_device_root $edit_base_dir/var/cache -o "subvol="$default_cache &&\
       mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
+      mount --bind /var/cache/pacman/pkg $edit_base_dir/var/cache/pacman/pkg &&\
       mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
       mount --bind /etc/default/grub $edit_base_dir/etc/default/grub &&\
       mount --bind /etc/default/grub-btrfs $edit_base_dir/etc/default/grub-btrfs &&\
@@ -287,10 +287,13 @@ function provide_rw_root (){
       mount --bind /etc/pacman.conf $edit_base_dir/etc/pacman.conf &&\
       mount --bind /etc/mkinitcpio.conf $edit_base_dir/etc/mkinitcpio.conf &&\
       mount --bind /etc/mkinitcpio.d $edit_base_dir/etc/mkinitcpio.d &&\
-printf "Atualizando bootloader" &&\
+printf "Atualizando bootloader
+" &&\
       arch-chroot $edit_base_dir $update_grub_command &&\
-printf "Entrando em chroot"
-      arch-chroot $edit_base_dir
+printf "Entrando em chroot
+"
+      arch-chroot $edit_base_dir &&
+	umount -Rv $edit_base_dir
 }
 
 ########################################################################################################################
