@@ -16,14 +16,14 @@ Para que funcione conforme projetado, o initrd é customizado, de forma que a ar
 **Terceira camada:** um subvolume btrfs com permissão de leitura e escrita, que conterá diretórios para permitir montagem overlay com permissão de escrita em /etc/, /var, /root, /mnt, /home, /opt, /srv, /usr/local/ e /usr/lib/systemd, acima da camada somente leitura anterior. Assim, configurações de serviços, montagem, udev e afins podem ser honradas apropriadamente pelo systemd, na fase 2 da inicialização, e scripts customizados relacionados á suspensão e desligamento podem ser criados livremete (IMPORTANTE= alterar atributos dos binários sobre o overlay, após o sistema devidamente iniciado, ainda que não afete os arquivos reais, pode causar problemas na inicialização seguinte; esse overlay em específico (/usr/lib/systemd/) deve ser usado somente nos casos acima mencionados, adicionar scripts e serviços associados a suspensão e desligamento do sistema.) O subvolume que abriga os overlays tem o nome explicitamente declarado no init; renomear o subvolume sem mudá-lo em /usr/lib/initcpio/hooks/stateless-mode-boot e reconstruir o init implica em um boot quebrado. Será tratado abaixo sobre modo de manutenção para essa situação.
 
 **ATENÇÃO: esse hook deve ser o último em HOOKS no /etc/mkinitcpio.conf, é compatível com os hooks ativos por padrão no ArchLinux, e NÃO é compatível com os hooks grub-btrfs-overlayfs e systemd; a combinação com outros hooks não foi testada**
-___________________________________________________________________________________________________________________
 
-** Sobre pontos de montagem e serviços **
+**Sobre pontos de montagem e serviços**
 
 Quaisquer pontos de montagem declarados /etc/fstab do overlay, bem como serviços de /etc/systemd/system serão honrados normalmente a princípio, mas quando se trata de subvolumes do mesmo dispositivo de bloco, há uma limitação: como a raiz do sistema é um subvolume com permissão de escrita, e não é desmontada e remontada pelo systemd para honrar uma entrada no fstab (que sequer precisa existir), todos os demais subvolumes do mesmo dispositivo de bloco seguem essa mesma montagem, ou seja, sem compressão, ainda que declarada corretamente no fstab. Uma operação de remount corrige isso, portando acrescentei nessa ferramenta um serviço do systemd que fará tal operação no início do sistema. 
 ** A home DEVE ser uma montagem verdadeira, e não somente o overlay. Ferramentas de gerenciamento de container (docker/podman) não funcionam corretamente quando seu armazenamento é um overlay. Crie um subvolume/partição para a home, e o coloque corretamente no fstab. O mesmo pode ser verdade (não testado) para bancos de dados e imagens de máquinas virtuais em /var. Se usa algumas dessas coisas no dia a dia, e precisa que fiquem em /var, tenha partições e subvolumes verdadeiros para montar apropriadamente **
----------------------------------------------------------------------------------------------------------------------------------------------------
-** Live-patch **
+
+
+**Live-patch**
 
 Ainda que não plenamente funcional, é possível atualizar o sistema e instalar/desinstalar pacotes sem reinício. E usando btrfs, e um simples hook no pacman, é possível gerar commits bootáveis antes de cada operação. O suporte a live-patch porém é experimental, portanto espere inconsistências do tipo:
 1. Remover um pacote não o remove do path, nem remove seu ícone da área de trabalho imediatamente. As vezes é possível até mesmo seguir executando, caso seja um programa simples sem dependências, mas não confie no pleno funcionamento, espere por inconsistências, não arrisque por exemplo dados sensível em um programa nesse estado.  Um reinício corrige essa situação
