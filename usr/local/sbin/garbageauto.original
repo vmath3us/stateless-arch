@@ -1,8 +1,8 @@
 #!/bin/env bash
 block_device_root="insert name block device here"
+parametersearch="insert here common name commits. Case sensitive"
 toplevel_dir=$(mktemp -p -d /tmp)
 moment=$(date +%Y-%m-%d--%T)
-parametersearch="insert here common name commits. Case sensitive"
 mkdir -p /var/log/btrfslogs &&   ############log dir, optional
 touch /var/log/btrfslogs/garbage.log ###################log file, optional
 
