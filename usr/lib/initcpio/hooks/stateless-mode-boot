@@ -7,10 +7,14 @@ run_latehook() {
 	local root_mnt="/new_root"
 	
 	local lower_dir_etc="/new_root/etc"
+	
+	local lower_dir_home="/new_root/home"
 
 	local lower_dir_systemd="/new_root/usr/lib/systemd"
 
 	local lower_dir_var="/new_root/var"
+
+	local lower_dir_vartmp="/new_root/var/tmp"
 	
 	local lower_dir_roothome="/new_root/root"
 
@@ -22,43 +26,45 @@ run_latehook() {
 
 	local lower_dir_srv="/new_root/srv"
 	
-	local lower_dir_home="/new_root/home"
-
 	local real_block_device=$(resolve_device "$root");
+	
+	local root_overlay_lowerdir=$(mktemp -d -p /)	
 
-	local root_overlay_lowerdir=$(mktemp -d -p /)
-
-	local root_overlay_readonly=$(mktemp -d -p /)
-
-	local user_overlay=$(mktemp -d -p /)
+	local root_overlay_protect=$(mktemp -d -p /)	
 
 	mount --move ${root_mnt} ${root_overlay_lowerdir} &&
 
-	echo "root movido para lowerdir"
+	mount -t tmpfs tmpfs ${root_overlay_protect} &&
 
-	mount -t overlay overlay -o lowerdir=${root_overlay_lowerdir}:${root_overlay_readonly} ${root_mnt}
+	mount -t overlay -o lowerdir=${root_overlay_lowerdir}:${root_overlay_protect} rootfs ${root_mnt} &&
 
-	echo "overlay de proteção montado"
 
-	mount "${real_block_device}" -t btrfs -o subvol=${user_state_subvol} ${user_overlay} &&
-	mkdir -p ${user_overlay}/etc -v
-	mkdir -p ${user_overlay}/systemd -v
-	mkdir -p ${user_overlay}/var -v
-	mkdir -p ${user_overlay}/roothome -v
-	mkdir -p ${user_overlay}/usrlocal -v
-	mkdir -p ${user_overlay}/mnt -v
-	mkdir -p ${user_overlay}/opt -v
-	mkdir -p ${user_overlay}/srv -v
-	mkdir -p ${user_overlay}/home -v
-	mkdir -p ${user_overlay}/work_etc -v
-	mkdir -p ${user_overlay}/work_systemd -v
-	mkdir -p ${user_overlay}/work_var -v
-	mkdir -p ${user_overlay}/work_roothome -v
-	mkdir -p ${user_overlay}/work_usrlocal -v
-	mkdir -p ${user_overlay}/work_mnt -v
-	mkdir -p ${user_overlay}/work_opt -v
-	mkdir -p ${user_overlay}/work_srv -v
+	echo "overlay de proteção montado" &&
+  
+
+
+	local user_overlay=$(mktemp -d -p /)	
+
+
+	mount "${real_block_device}" -t btrfs -o "compress-force="zstd,subvol=${user_state_subvol} ${user_overlay} &&
+	mkdir -p ${user_overlay}/etc -v &&
+	mkdir -p ${user_overlay}/home -v &&
+	mkdir -p ${user_overlay}/systemd -v &&
+	mkdir -p ${user_overlay}/var -v &&
+	mkdir -p ${user_overlay}/roothome -v &&
+	mkdir -p ${user_overlay}/usrlocal -v &&
+	mkdir -p ${user_overlay}/mnt -v &&
+	mkdir -p ${user_overlay}/opt -v &&
+	mkdir -p ${user_overlay}/srv -v &&
+	mkdir -p ${user_overlay}/work_etc -v &&
 	mkdir -p ${user_overlay}/work_home -v &&
+	mkdir -p ${user_overlay}/work_systemd -v &&
+	mkdir -p ${user_overlay}/work_var -v &&
+	mkdir -p ${user_overlay}/work_roothome -v &&
+	mkdir -p ${user_overlay}/work_usrlocal -v &&
+	mkdir -p ${user_overlay}/work_mnt -v &&
+	mkdir -p ${user_overlay}/work_opt -v &&
+	mkdir -p ${user_overlay}/work_srv -v &&
 
   echo "diretórios overlay do usuário verificados" &&
 	
