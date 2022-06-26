@@ -72,7 +72,9 @@ Os scripts base-manager,pac-base e commit-root serão salvos em /usr/local/sbin,
 
 O sistema dessa forma será altamente resiliente. De fato, excetuando algo que afete diretamente o sistema de arquivos, ou apagar as imagens da grub (mbr do disco se disco mbr+legacy, partição biosboot se gpt+legacy, arquivos da partição fat-32 se efi), o sistema é facilmente recuperável em praticamente qualquer situação sem necessidade de live-boot. Novo kernel/driver de vídeo problemático? Use um commit anterior. A grub não encontrou o arquivo de configuração e caiu no shell? Use a cli para chamar o configfile de qualquer um dos commits, todos eles terão um grub.cfg. Grub-rescue? Chame o binário da grub de qualquer um dos commits, e você terá o grub-shell completo, se onde será possível chamar o grub.cfg de qualquer um dos commits.
 
-O uso do hook init da forma em que está nesse momento (25 de junho de 2022) já é possível, mas se trata de uma ferramenta beta. Mesmo quando toda essa ferramenta for terminada, **NÃO SERÁ** indicada para usuários inexperientes. Problemas que exijam conhecimento de pontos de montagem, manipulação do processo de boot e de subvolumes btrfs podem surgir
+Para editar diretamente a base, use base-manager --provide-rw-root. A base será montada, e plenamente acessível e manuseável conforme o usuário desejar. Um commit será gerado antes, portanto aguarde a atualização do bootloader.
+
+O uso do hook init da forma em que está nesse momento (25 de junho de 2022) já é possível, mas se trata de uma ferramenta beta. Mesmo quando toda essa ferramenta for terminada, **NÃO SERÁ** indicada para usuários inexperientes. Problemas que exijam conhecimento de pontos de montagem, manipulação do processo de boot e de subvolumes btrfs podem surgir.
 
  **NÃO INCLUA A PARTIÇÃO EFI NO SEU FSTAB.**
 
