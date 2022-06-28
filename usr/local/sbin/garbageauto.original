@@ -14,14 +14,15 @@ function commit_garbage(){
 	preserve=5 ################ number to PRESERVE recent commits
 	operation=1
 	echo " start clear old commits $moment" >> /var/log/btrfslogs/garbage.log &&\
-	subvol=({$(btrfs su l -st $toplevel_dir | grep $parametersearch | cut -f1)})
+	subvol=({ $(btrfs su l -st $toplevel_dir | grep $parametersearch | cut -f1) })
     	while [ $totalcandidate -gt $preserve ] ; do
       		btrfs su del -i ${subvol[$operation]} $toplevel_dir >> /var/log/btrfslogs/garbage.log 
       		btrfs filesystem sync $toplevel_dir
       		let --totalcandidate
       		let ++operation
     	done
-	echo " end clear old commits started in $moment" >> /var/log/btrfslogs/garbage.log &&\
- 	exit 0
+	  echo " end clear old commits started in $moment" >> /var/log/btrfslogs/garbage.log &&\
+    umount -R $toplevel_dir &&\
+ 	  exit 0
 }
 commit_garbage
