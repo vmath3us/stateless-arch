@@ -133,7 +133,7 @@ function copy_scripts_to_root(){
   mkdir -p /etc/pacman.d/hooks &&\
   mkdir -p /etc/systemd/system &&\
   cp etc/pacman.d/hooks/10-commit-root.hook /etc/pacman.d/hooks/10-commit-root.hook &&\
-  cp etc/systemd/system/remountfs.service /etc/systemd/system/remountfs.service &&\
+  cp etc/systemd/system/remount.service /etc/systemd/system/remount.service &&\
   cp -r etc/systemd/system/multi-user.target.wants /etc/systemd/system/multi-user.target.wants &&\
   chmod a+x /usr/local/sbin/base-manager &&\
   chmod a+x /usr/local/sbin/pac-base &&\
@@ -154,6 +154,7 @@ function end_implementation (){
   Em seguida, (se efi), monte sua partição efi em /boot/efi.
   INSTALE e ATUALIZE a grub e reinicie
   Após o sistema iniciado, edite seu /etc/pacman.conf, descomentando a linha HookDir
+  Ative o serviço remount.service (ler README a respeito da montagem aninhada da home)
   Para iniciar sem stateless-mode-boot, aperte c no menu de boot,
   e adicione, ao final da linha do kernel
   disablehooks=stateless-boot-mode
