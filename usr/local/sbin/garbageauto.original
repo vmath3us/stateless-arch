@@ -6,7 +6,7 @@ mkdir -p /var/log/btrfslogs &&   ############log dir, optional
 touch /var/log/btrfslogs/garbage.log ###################log file, optional
 function commit_garbage(){
  	mount $block_device_root $toplevel_dir -o "subvolid="5
-	parametersearch="commit-root"
+	parametersearch="insert parameter to search here, case sensitive"
 	totalcandidate=$(btrfs su l -s $toplevel_dir | grep $parametersearch | wc -l)
 	preserve=5 ################ number to PRESERVE recent commits
 	operation=0
