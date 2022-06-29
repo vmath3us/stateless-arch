@@ -1,5 +1,4 @@
 # Stateless Arch <h1>
-**(25/jun/2022, v0.2-beta disponível)**
 
 Inspirado em sistemas como o Clear Linux, Fedora SilverBlue e Suse MicroOS, decidi tentar trazer algo semelhante a eles para o ArchLinux. Essa ferramenta visa permitir que um rm -rf --no-preserve-root não seja catastrófico, pelo contrário, limpe todas as suas configurações, e traga o sistema para um ponto conhecido, atualizado, onde estejam somente os programas e configurações padrões do repositório. 
 Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLinux, é possível montar /etc/, /var, /root, /mnt, /home, /opt, /srv, /usr/local e /usr/lib/systemd com permissão de leitura e escrita sobre uma raiz read-only (inspirado pelo código de Antynea em https://github.com/Antynea/grub-btrfs).
@@ -75,7 +74,7 @@ O sistema dessa forma será altamente resiliente. De fato, excetuando algo que a
 
 Para editar diretamente a base, use base-manager --provide-rw-root. A base será montada, e plenamente acessível e manuseável conforme o usuário desejar. Um commit será gerado antes, portanto aguarde a atualização do bootloader.
 
-O uso do hook init da forma em que está nesse momento (25 de junho de 2022) já é possível, mas se trata de uma ferramenta beta. Mesmo quando toda essa ferramenta for terminada, **NÃO SERÁ** indicada para usuários inexperientes. Problemas que exijam conhecimento de pontos de montagem, manipulação do processo de boot e de subvolumes btrfs podem surgir.
+O uso do hook init da forma em que está nesse momento já é possível, mas se trata de uma ferramenta beta. Mesmo quando for terminada, **NÃO SERÁ** indicada para usuários inexperientes. Problemas que exijam conhecimento de pontos de montagem, manipulação do processo de boot e de subvolumes btrfs podem surgir.
 
  **NÃO INCLUA A PARTIÇÃO EFI NO SEU FSTAB.**
 
