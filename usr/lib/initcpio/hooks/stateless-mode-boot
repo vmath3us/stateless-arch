@@ -28,15 +28,13 @@ run_latehook() {
 	
 	local real_block_device=$(resolve_device "$root");
 	
-	local root_overlay_lowerdir=$(mktemp -d -p /)	
 
 	local root_overlay_protect=$(mktemp -d -p /)	
 
-	mount --move ${root_mnt} ${root_overlay_lowerdir} &&
 
 	mount -t tmpfs tmpfs ${root_overlay_protect} &&
 
-	mount -t overlay -o lowerdir=${root_overlay_lowerdir}:${root_overlay_protect} rootfs ${root_mnt} &&
+	mount -t overlay -o lowerdir=${root_mnt}:${root_overlay_protect} rootfs ${root_mnt} &&
 
 
 	echo "overlay de proteção montado" &&
