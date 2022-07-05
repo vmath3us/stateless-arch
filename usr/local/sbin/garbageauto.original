@@ -21,10 +21,10 @@ function commit_garbage(){
         operation=0
 	    echo "start clear old $parameter in $moment" >> /var/log/btrfslogs/garbage.log
         	    while [ $totalcandidate -gt ${preserve[$position_array]} ] ; do
-                    btrfs su del -i ${subvol[operation]} $toplevel_dir
-                    btrfs filesystem sync $toplevel_dir >> /var/log/btrfslogs/garbage.log
-                        let --totalcandidate
-                        let ++operation
+                        btrfs su del -i ${subvol[operation]} $toplevel_dir
+                        btrfs filesystem sync $toplevel_dir >> /var/log/btrfslogs/garbage.log
+                            let --totalcandidate
+                            let ++operation
         	    done
 	    echo " end clear old $parameter started in $moment" >> /var/log/btrfslogs/garbage.log
     done
