@@ -292,7 +292,7 @@ printf "Atualizando bootloader
       arch-chroot $edit_base_dir $update_grub_command &&\
 printf "Entrando em chroot
 "
-      arch-chroot $edit_base_dir &&
+    arch-chroot $edit_base_dir
 	umount -Rv $edit_base_dir
 }
 
