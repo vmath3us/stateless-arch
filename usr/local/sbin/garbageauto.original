@@ -17,7 +17,7 @@ function commit_garbage(){
     for position_array in ${!parameter[@]} ; do
         moment=$(date +%Y-%m-%d--%T)
         totalcandidate=$(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | wc -l)
-	    subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | cut -f1 ))
+        subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | cut -f1 ))
         operation=0
 	    echo "start clear old $parameter in $moment" >> /var/log/btrfslogs/garbage.log
         	    while [ $totalcandidate -gt ${preserve[$position_array]} ] ; do
