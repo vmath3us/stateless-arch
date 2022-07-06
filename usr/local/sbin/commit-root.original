@@ -3,7 +3,7 @@ function commit_root(){
   toplevel_dir=$(mktemp -d -p /tmp)
   moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-    btrfs su snap -r / $toplevel_dir/@commit-root--pre-pacman--$moment &&\
+    btrfs su snap -r / $toplevel_dir/@commit-root--$moment &&\
     btrfs filesystem sync / &&\
     grub-mkconfig -o /boot/grub/grub.cfg &&
     umount -R $toplevel_dir

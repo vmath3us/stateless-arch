@@ -1,14 +1,19 @@
 #!/bin/bash
 function garbage_config(){
-    block_device_root="name_block_device_here"
+    block_device_root="/dev/sda3"
     declare parameter
         parameter[1]="commit-root"
-        parameter[2]="commit-home"
-        parameter[3]="commit-user-state"
-    declare preserve
-        preserve[1]="8"
-        preserve[2]="12"
-        preserve[3]="12"
+        parameter[2]="commit-home"  ### example sufix name to home snapshots, case sensitive
+        parameter[3]="commit-sysadmin-state" ### example sufix name to sysadmin subvol snapshots, case sensitive
+        ##parameter[4]="sufix-name-commit"
+    declare preserve        ##### set preserve most recent commits number
+        preserve[1]="50"
+        preserve[2]="50"
+        preserve[3]="50"
+        ##parameter[4]="quantity preserve"
+#        _________________________________________________________________
+    ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, work to all parameter[n], insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
+      shield="pre|pos|created|int"
     commit_garbage
 }
 function commit_garbage(){
@@ -16,17 +21,21 @@ function commit_garbage(){
     mount $block_device_root $toplevel_dir
     for position_array in ${!parameter[@]} ; do
         moment=$(date +%Y-%m-%d--%T)
-        totalcandidate=$(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | wc -l)
+        if [  -z $shield ] ; then
         subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | cut -f1 ))
-        operation=0
-	    echo "start clear old $parameter in $moment" >> /var/log/btrfslogs/garbage.log
+        else
+        subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | grep -Ev $shield | cut -f1 ))
+        fi
+        totalcandidate=${#subvol[@]}
+        controller=0
+	    echo "start clear old $parameter in $moment"
         	    while [ $totalcandidate -gt ${preserve[$position_array]} ] ; do
-                        btrfs su del -i ${subvol[operation]} $toplevel_dir
-                        btrfs filesystem sync $toplevel_dir >> /var/log/btrfslogs/garbage.log
+                        btrfs su del -i ${subvol[$controller_array]} $toplevel_dir
+                        btrfs filesystem sync $toplevel_dir
                             let --totalcandidate
-                            let ++operation
+                            let ++controller
         	    done
-	    echo " end clear old $parameter started in $moment" >> /var/log/btrfslogs/garbage.log
+	    echo " end clear old $parameter started in $moment"
     done
 }
 garbage_config
