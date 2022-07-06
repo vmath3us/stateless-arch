@@ -37,5 +37,6 @@ function commit_garbage(){
         	    done
 	    echo " end clear old $parameter started in $moment"
     done
+    base-manager --bootloader-update-no-commit
 }
 garbage_config
