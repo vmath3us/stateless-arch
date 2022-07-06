@@ -154,12 +154,12 @@ function end_implementation (){
   O sistema de arquivos foi preparado, e os scripts estão nos locais e com as permissões corretas
   edite /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot. (ler README para incompatibilidades)
   Regere o init com mkinitcpio -P
-  Em seguida, (se efi), monte sua partição efi em /boot/efi.
-  INSTALE e ATUALIZE a grub e reinicie
+  Em seguida, (se efi), monte sua partição efi em /boot/efi,
+  INSTALE e ATUALIZE a grub e reinicie.
   Ative o serviço remount.service (ler README)
   Para iniciar sem stateless-mode-boot, aperte c no menu de boot,
-  e adicione, ao final da linha do kernel
-  disablehooks=stateless-boot-mode.
+  adicione, ao final da linha do kernel
+  disablehooks=stateless-boot-mode, e aperte F10
 
   Bem vindo ao Stateles Arch
 
