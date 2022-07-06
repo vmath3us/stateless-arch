@@ -1,5 +1,7 @@
 # Stateless Arch <h1>
 
+**Esse é um projeto de atualizações contínuas. Se assegure de ter uma cópia recente do repositório antes de testar. As releases são únicamente para marcar a evolução do código, e não devem ser usadas**
+
 Inspirado em sistemas como o Clear Linux, Fedora SilverBlue e Suse MicroOS, decidi tentar trazer algo semelhante a eles para o ArchLinux. Essa ferramenta visa permitir que o root controlado pelo pacman seja diferente do root do sysadmin. Dessa forma, é possível descartar configurações problemáticas sem perder atualizações, e também é possível reverter atualizações sem descartar nenhuma das configurações do sysadmin.
 
 Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLinux, é possível montar /etc/, /var, /root, /mnt, /home, /opt, /srv, /usr/local e /usr/lib/systemd com permissão de leitura e escrita sobre uma raiz read-only (inspirado pelo código de Antynea em https://github.com/Antynea/grub-btrfs).
@@ -39,7 +41,7 @@ Assim como no Suse MicroOS, e em qualquer sistema desse tipo, o sistema não é 
 
 Habilitar Stateless Arch é simples como:
 
-* pacstrap em um único subvolume btrfs (/boot incluso). Deve constar nos pacotes, arch-install-scripts grub grub-btrfs bash e git;
+* pacstrap -c em um único subvolume btrfs (/boot incluso). Deve constar nos pacotes, arch-install-scripts grub grub-btrfs bash e git (-c para não incluir na base a cache do pacstrap);
 * arch-chroot no subvolume;
 * passwd;
 * gerar locales;
