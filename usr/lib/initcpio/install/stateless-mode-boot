@@ -14,5 +14,5 @@ help() {
 provide overlay mount to stateless use system
 HELPEOF
 }
-
+# copy to grub-btrfs-overlayfs, thanks to Antynea
 # vim: set ft=sh ts=4 sw=4 et:
