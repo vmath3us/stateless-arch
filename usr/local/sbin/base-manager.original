@@ -39,7 +39,13 @@ default_sysadmin_data="@sysadmin_state"
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-
+function stateless_arch_welcome(){
+    printf "
+    ##################################################################################################
+                                    Stateless Arch
+    ##################################################################################################              
+"
+}
 function display_functions(){
 printf "
       Funções disponíveis
@@ -60,6 +66,7 @@ function ident(){
 }
 
 function text_help_global(){
+    stateless_arch_welcome
      ident
      help_bootloader_update
      ident
@@ -72,8 +79,8 @@ function text_help_global(){
 
   printf "
   PS: todas as operações aqui descritas são diretamente no sistema de arquivos,
-  portanto precisam de permissões elevadas, e por longo período.
-  Use esse utilitário como root
+  portanto precisam de permissões elevadas, e as vezes por longo período.
+  Use esse utilitário preferencialmente como root
 
   "
     ident
@@ -105,7 +112,10 @@ function help_bootloader_update(){
 function bootloader_update(){
   moment=$(date +%Y-%m-%d--%T)
   mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-update-grub--$moment
+  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-update-grub--$moment &&\
+  bootloader_update_p2
+}
+function bootloader_update_p2(){
   mount $block_device_root $update_grub_dir -o "subvol="$default_root &&\
       mount --bind /usr/local/ $update_grub_dir/usr/local/ &&\
       mount --bind /etc/grub.d $update_grub_dir/etc/grub.d &&\
@@ -116,17 +126,16 @@ function bootloader_update(){
       mount --bind /etc/mkinitcpio.conf $update_grub_dir/etc/mkinitcpio.conf &&\
       mount --bind /etc/mkinitcpio.d $update_grub_dir/etc/mkinitcpio.d &&\
   echo "entrando em ambiente chroot" &&\
-  bootloader_upgrade_p2
+  bootloader_update_p3
 }
-
-function bootloader_upgrade_p2(){
+function bootloader_update_p3(){
   arch-chroot $update_grub_dir $update_grub_command
   if [ $? -eq 0 ] ; then
     umount -Rv $update_grub_dir &&\
-    printf "a configuração do bootloader foi atualizada com suceo"
+    printf "a configuração do bootloader foi atualizada com sucesso"
   else
     umount -Rv $update_grub_dir &&\
-    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customiza"
+    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customizações"
   fi
 }
 
@@ -151,10 +160,11 @@ printf "
 function restore_root(){
 printf "
            será exibida a lista de commits do root gerados durante atualizações,
-           pré --bootloader-upgrade e pré --provide-rw-root.
+           pré --bootloader-update e pré --provide-rw-root.
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
-           ATENÇÃO: se você está usando outra ferramenta para os snapshots, use-a, e não esse scritp"
+           ATENÇÃO: se você está usando outra ferramenta para gerar os commits, use-a também para restaurar,
+           e não esse scritp"
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
                  y|Y)
@@ -207,11 +217,12 @@ function help_reset_sysadmin_data(){
     com a senha, grupos e tudo mais que foi gravada na base.
     Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
     será preservada no commit
-    O commit será acessível atravez do comando
-    "btrfs su l -st / | grep sysadmin-state--deprecated--" se usado de dentro de --provide-rw-root
+    O commit será acessível montando o dispositivo de bloco btrfs diretamente, e usando o comando
+    btrfs su l -st /ponto/de/montagem | grep sysadmin-state--deprecated-- 
+    (ou alternativamente, de dentro de --provide-rw-root),
     e conterá ao final a data e hora em que --reset-sysadmin-data for usado.
-    Esse tipo de commit possui informações sensíveis, como chaves ssh e senhas wifi,
-    portanto deletá-los é responsabilidade do usuário.
+    Esse tipo de commit possui informações sensíveis, como chaves ssh e senhas wifi.
+    Deletá-los é responsabilidade do sysadmin.
 
 "
 }
@@ -242,8 +253,8 @@ function help_provide_rw_root(){
   Só deve ser usado em casos especiais.
   Instale  e remova programas via pac-base,
   e edite arquivos de configuração normalmente em seu próprio /etc.
-  Fazendo dessa forma você garantirá que um --reset-sysadmin-data
-  retorne todos os pacotes aos padrões mais recentes do repositório
+  Fazendo dessa forma você garantirá que --reset-sysadmin-data
+  retorne todos os pacotes aos padrões de configuração do repositório
 
 
   O --provide-rw-root consiste em um terminal chroot onde é possível
@@ -251,13 +262,13 @@ function help_provide_rw_root(){
   É possível integrar programas, remover programas,
   adicionar módulos de kernel,ou qualquer operação que esteja documentada na wiki.
   Não necessáriamente exige reinício, depende do que for modificado.
-  Mudanças que não forem revertidas serão inclusas nos próximos seguintes.
+  Mudanças que não forem revertidas serão inclusas nos commits seguintes.
 
                                       ATENÇÃO         
                 Essa função NÃO é necessária para editar a cmdline do kernel
                             edite normalmente seu /etc/default/gub
                                   e regere o grub.cfg
-                          usando base-manager --bootloader-upgrade
+                          usando base-manager --bootloader-update
               
                                     IMPORTANTE
 
@@ -309,6 +320,7 @@ printf "Entrando em chroot
       ;;
       --bootloader-update)
             clear
+            stateless_arch_welcome
             help_bootloader_update
               read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
                  case $terms_use_root_manager in
@@ -319,6 +331,7 @@ printf "Entrando em chroot
       ;;
       --restore-root)
             clear
+            stateless_arch_welcome
             help_restore_root
               read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
                   case $terms_use_root_manager in
@@ -329,6 +342,7 @@ printf "Entrando em chroot
       ;;
       --reset-sysadmin-data)
             clear
+            stateless_arch_welcome
             help_reset_sysadmin_data
               read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
                   case $terms_use_root_manager in
@@ -339,6 +353,7 @@ printf "Entrando em chroot
       ;;
       --provide-rw-root)
             clear
+            stateless_arch_welcome
             help_provide_rw_root
               read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
                  case $terms_use_root_manager in
@@ -347,8 +362,14 @@ printf "Entrando em chroot
                      ;;
                  esac
       ;;
+      ################################ silent function ###########################################
+    --bootloader-update-no-commit)
+            bootloader_update_p2
+            ;;
+      ################################ silent function ###########################################
                     *)
-         display_functions
+        stateless_arch_welcome
+        display_functions
           exit 0
           ;;
       esac
