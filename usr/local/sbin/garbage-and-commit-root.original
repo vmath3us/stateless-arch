@@ -9,6 +9,7 @@ shield="pre|pos|created|int"
 commit_verify
 }
 function commit_verify(){
+ 	mount $block_device_root $toplevel_dir -o "subvolid="5
     if [ -z $parameter ] || [ -z $preserve ]; then
         commit_root
     else
@@ -16,7 +17,6 @@ function commit_verify(){
     fi
 }
 function commit_garbage_array(){
- 	mount $block_device_root $toplevel_dir -o "subvolid="5
     if [  -z $shield ] ; then
          subvol=($(btrfs su l -st $toplevel_dir | grep $parameter | cut -f1 ))
          totalcandidate=${#subvol[@]}
@@ -35,14 +35,14 @@ function last_test(){
     fi
 }
 function commit_garbage(){
-    controler_array=0
+    controller_array=0
     echo "cleaning old commits started"
     echo "prepacman clear commits" &&\
           	while [ $totalcandidate -gt $preserve ] ; do
-            		btrfs su del -i ${subvol[$controler_array]} $toplevel_dir
+            		btrfs su del -i ${subvol[$controller_array]} $toplevel_dir
             		btrfs filesystem sync $toplevel_dir
             		let --totalcandidate
-            		let ++controler_array
+            		let ++controller_array
           	done
     echo "prepacman clear commits done" &&\
        	commit_root
