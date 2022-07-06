@@ -74,10 +74,11 @@ function check_deps (){
   fi
 }
 function manage_files(){
-  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/commit-root.original ] && [ -f usr/local/sbin/pac-base.original ]; then
+  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/commit-root.original ] && [ -f usr/local/sbin/pac-base.original ] && [ -f usr/local/sbin/commit-root.original ] ;   then
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/base-manager.original > usr/local/sbin/base-manager &&\
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/pac-base.original > usr/local/sbin/pac-base &&\
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/commit-root.original > usr/local/sbin/commit-root &&\
+    sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/garbage-and-commit-root.original > usr/local/sbin/garbage-and-commit-root &&\
     last_chance
   else
     printf "
@@ -99,7 +100,7 @@ while [ $time -ge 1 ] ; do
   ###############################################################################################
 
 "
-  echo "arquivos adaptados, iniciando manupulação de subvolumes em $time segundos, ctrl-c para cancelar" 
+  echo "arquivos adaptados, iniciando manipulação de subvolumes e propagação de arquivos em $time segundos, ctrl-c para cancelar" 
   sleep 1s
   let "time--" 
 done
@@ -128,6 +129,7 @@ function copy_scripts_to_root(){
   cp usr/local/sbin/remountfs /usr/local/sbin/remountfs &&\
   cp usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
   cp usr/local/sbin/commit-root /usr/local/sbin/commit-root &&\
+  cp usr/local/sbin/garbage-and-commit-root.original /usr/local/sbin/garbage-and-commit-root &&\
   cp usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   cp usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
   mkdir -p /etc/pacman.d/hooks &&\
@@ -149,15 +151,16 @@ function end_implementation (){
   umount -Rv $toplevel_dir &&
   printf "
   O sistema de arquivos foi preparado, e os scripts estão nos locais e com as permissões corretas
-  edite /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot.
+  edite /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot. (ler README para incompatibilidades)
   Regere o init com mkinitcpio -P
   Em seguida, (se efi), monte sua partição efi em /boot/efi.
   INSTALE e ATUALIZE a grub e reinicie
-  Após o sistema iniciado, edite seu /etc/pacman.conf, descomentando a linha HookDir
-  Ative o serviço remount.service (ler README a respeito da montagem aninhada da home)
+  Ative o serviço remount.service (ler README)
   Para iniciar sem stateless-mode-boot, aperte c no menu de boot,
   e adicione, ao final da linha do kernel
-  disablehooks=stateless-boot-mode
+  disablehooks=stateless-boot-mode.
+
+  Bem vindo ao Stateles Arch
 
 "
   exit 0
