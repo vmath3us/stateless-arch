@@ -15,7 +15,7 @@ update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 
 ########################################################################################################################
 ########################################################################################################################
-##################################--user-complete-data-in-implementation--##############################################
+##################################--sysadmin-complete-data-in-implementation--##############################################
 ########################################################################################################################
 ########################################################################################################################
 #######################################--change-inside-the-quotes---####################################################
@@ -34,7 +34,7 @@ default_root="@base_system"
 ########################################################################################################################
 ########################################################################################################################
 
-default_user_data="@user_state"
+default_sysadmin_data="@sysadmin_state"
 
 ########################################################################################################################
 ########################################################################################################################
@@ -46,7 +46,7 @@ printf "
            --help
            --bootloader-update
            --restore-root
-           --reset-user-data
+           --reset-sysadmin-data
            --provide-rw-root
 
 "
@@ -65,7 +65,7 @@ function text_help_global(){
      ident
      help_restore_root
      ident
-     help_reset_user_data
+     help_reset_sysadmin_data
      ident
      help_provide_rw_root
      ident
@@ -191,9 +191,9 @@ printf "restauração concluída, reinicie para usar"
 ########################################################################################################################
 ########################################################################################################################
 
-function help_reset_user_data(){
+function help_reset_sysadmin_data(){
   printf "
-  --reset-user-data
+  --reset-sysadmin-data
   
     Todo o conteúdo de /etc, /var, /mnt , /opt, /srv, /root, /usr/local, /usr/lib/systemd e /home
     presente no overlay será movido para um commit, recursivamente.
@@ -208,8 +208,8 @@ function help_reset_user_data(){
     Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
     será preservada no commit
     O commit será acessível atravez do comando
-    "btrfs su l -st / | grep user-state--deprecated--" se usado de dentro de --provide-rw-root
-    e conterá ao final a data e hora em que --reset-user-data for usado.
+    "btrfs su l -st / | grep sysadmin-state--deprecated--" se usado de dentro de --provide-rw-root
+    e conterá ao final a data e hora em que --reset-sysadmin-data for usado.
     Esse tipo de commit possui informações sensíveis, como chaves ssh e senhas wifi,
     portanto deletá-los é responsabilidade do usuário.
 
@@ -218,16 +218,16 @@ function help_reset_user_data(){
 
 ########################################################################################################################
 
-function reset_user_data(){
+function reset_sysadmin_data(){
     moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-    mv $toplevel_dir/$default_user_data $toplevel_dir/@user-state--deprecated--$moment -v &&
+    mv $toplevel_dir/$default_sysadmin_data $toplevel_dir/@sysadmin-state--deprecated--$moment -v &&
     printf "
     criando novo subvolume para dados de usuário...
     " &&
-    btrfs su cr $toplevel_dir/$default_user_data &&
+    btrfs su cr $toplevel_dir/$default_sysadmin_data &&
     printf "
-    Dados de usuário movidos com sucesso, deletá-los completamente é sua responsabilidade
+    Dados de sysadmin movidos com sucesso, deletá-los completamente é sua responsabilidade
     "
 }
 
@@ -242,7 +242,7 @@ function help_provide_rw_root(){
   Só deve ser usado em casos especiais.
   Instale  e remova programas via pac-base,
   e edite arquivos de configuração normalmente em seu próprio /etc.
-  Fazendo dessa forma você garantirá que um --reset-user-data
+  Fazendo dessa forma você garantirá que um --reset-sysadmin-data
   retorne todos os pacotes aos padrões mais recentes do repositório
 
 
@@ -261,7 +261,7 @@ function help_provide_rw_root(){
               
                                     IMPORTANTE
 
-          COnfigurações inseridas diretamente na base NÃO SERÃO limpas por --reset-user-data
+          COnfigurações inseridas diretamente na base NÃO SERÃO limpas por --reset-sysadmin-data
 
 ************************************************************************************************************
             Não existe sistema, ou implementação, a prova de burrice, então seja cauteloso
@@ -327,13 +327,13 @@ printf "Entrando em chroot
                       ;;
                     esac
       ;;
-      --reset-user-data)
+      --reset-sysadmin-data)
             clear
-            help_reset_user_data
+            help_reset_sysadmin_data
               read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
                   case $terms_use_root_manager in
                     *)
-                      reset_user_data
+                      reset_sysadmin_data
                       ;;
                     esac
       ;;

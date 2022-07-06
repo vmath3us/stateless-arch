@@ -2,7 +2,7 @@
 
 run_latehook() {
 
-  local user_state_subvol="@user_state"
+  local sysadmin_subvol="@sysadmin_state"
 
 	local root_mnt="/new_root"
 	
@@ -41,10 +41,10 @@ run_latehook() {
   
 
 
-	local user_overlay=$(mktemp -d -p /)	
+	local sysadmin_overlay=$(mktemp -d -p /)	
 
 
-	mount "${real_block_device}" -t btrfs -o "compress-force="zstd,subvol=${user_state_subvol} ${user_overlay} &&
+	mount "${real_block_device}" -t btrfs -o "compress-force="zstd,subvol=${sysadmin_subvol} ${sysadmin_overlay} &&
 	mkdir -p ${user_overlay}/etc -v &&
 	mkdir -p ${user_overlay}/home -v &&
 	mkdir -p ${user_overlay}/systemd -v &&
@@ -64,7 +64,7 @@ run_latehook() {
 	mkdir -p ${user_overlay}/work_opt -v &&
 	mkdir -p ${user_overlay}/work_srv -v &&
 
-  echo "diretórios overlay do usuário verificados" &&
+  echo "diretórios overlay do sysamdin verificados" &&
 	
 	mount -t overlay overlay -o lowerdir=${lower_dir_etc},upperdir=${user_overlay}/etc,workdir=${user_overlay}/work_etc,index=off,metacopy=off ${root_mnt}/etc &&	
 	mount -t overlay overlay -o lowerdir=${lower_dir_systemd},upperdir=${user_overlay}/systemd,workdir=${user_overlay}/work_systemd,index=off,metacopy=off ${root_mnt}/usr/lib/systemd &&	
@@ -76,5 +76,5 @@ run_latehook() {
 	mount -t overlay overlay -o lowerdir=${lower_dir_opt},upperdir=${user_overlay}/opt,workdir=${user_overlay}/work_opt,index=off,metacopy=off  ${root_mnt}/opt &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${user_overlay}/srv,workdir=${user_overlay}/work_srv,index=off,metacopy=off  ${root_mnt}/srv &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${user_overlay}/home,workdir=${user_overlay}/work_home,index=off,metacopy=off  ${root_mnt}/home &&
-	echo "montagem overlay do usuário concluída com sucesso, executando /sbin/init"	
+	echo "montagem overlay do sysadmin concluída com sucesso, executando /sbin/init"	
 }

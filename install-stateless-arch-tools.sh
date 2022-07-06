@@ -7,7 +7,7 @@ toplevel_dir=$(mktemp -d -p /tmp)
 #####################--change-here-and-in-all-files-usr/local/sbin--##########################
 default_root="@base_system"
 #####################--change-here-and-in-usr/lib/inictpio/hooks/stateless-mode-boot--##########################
-default_user_data="@user_state"
+default_sysadmin_data="@sysadmin_state"
 #############################################################################################################
 function welcome (){
   printf "
@@ -144,7 +144,7 @@ function copy_scripts_to_root(){
   end_implementation
 }
 function end_implementation (){
-  btrfs su cr $toplevel_dir/$default_user_data &&
+  btrfs su cr $toplevel_dir/$default_sysadmin_data &&
   btrfs filesystem sync $toplevel_dir &&
   umount -Rv $toplevel_dir &&
   printf "
