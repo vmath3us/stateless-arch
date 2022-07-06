@@ -35,10 +35,9 @@ function last_test(){
     fi
 }
 function commit_garbage(){
-    moment=$(date +%Y-%m-%d--%T)
     controler_array=0
     echo "cleaning old commits started"
-    echo "prepacman clear commits $moment" &&\
+    echo "prepacman clear commits" &&\
           	while [ $totalcandidate -gt $preserve ] ; do
             		btrfs su del -i ${subvol[$controler_array]} $toplevel_dir
             		btrfs filesystem sync $toplevel_dir
@@ -46,7 +45,6 @@ function commit_garbage(){
             		let ++controler_array
           	done
     echo "prepacman clear commits done" &&\
-    echo "cleaning old commits done, creating new..." &&\
        	commit_root
 }
 function commit_root(){
