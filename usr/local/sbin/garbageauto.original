@@ -1,6 +1,6 @@
 #!/bin/bash
 function garbage_config(){
-    block_device_root="/dev/sda3"
+    block_device_root="name_block_device_here"
     declare parameter
         parameter[1]="commit-root"
         parameter[2]="commit-home"  ### example sufix name to home snapshots, case sensitive
