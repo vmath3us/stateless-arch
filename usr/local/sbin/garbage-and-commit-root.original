@@ -8,14 +8,14 @@ function commit_garbage(){
     totalcandidate=${#subvol[@]}
     moment=$(date +%Y-%m-%d--%T)
 	preserve=12 ################ number to PRESERVE recent pacman commits
-	operation=0
+	controler_array=0
     echo "cleaning old commits started"
 	echo "prepacman clear commits $moment" &&\
     	while [ $totalcandidate -gt $preserve ] ; do
-      		btrfs su del -i ${subvol[$operation]} $toplevel_dir
+      		btrfs su del -i ${subvol[$controler_array]} $toplevel_dir
       		btrfs filesystem sync $toplevel_dir
       		let --totalcandidate
-      		let ++operation
+      		let ++controler_array
     	done
 	echo "prepacman clear commits done" &&\
     echo "cleaning old commits done, creating new..." &&\
