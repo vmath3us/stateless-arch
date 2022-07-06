@@ -4,7 +4,7 @@ function setup_pacman_garbage(){
 block_device_root="name_block_device_here"
 parameter="commit-root" ##### search commits for delete, case sensitive
 preserve=12 ################ number to PRESERVE recent pacman commits
-## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, work to all parameter[n], insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
+## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive. Insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
 shield="pre|pos|created|int"
 commit_verify
 }
