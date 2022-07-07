@@ -1,5 +1,6 @@
 # Stateless Arch <h1>
 
+
 **Esse é um projeto de atualizações contínuas. Se assegure de ter uma cópia recente do repositório antes de testar. As releases são únicamente para marcar a evolução do código, e não devem ser usadas**
 
 Inspirado em sistemas como o Clear Linux, Fedora SilverBlue e Suse MicroOS, decidi tentar trazer algo semelhante a eles para o ArchLinux. Essa ferramenta visa permitir que o root controlado pelo pacman seja diferente do root do sysadmin. Dessa forma, é possível descartar configurações problemáticas sem perder atualizações, e também é possível reverter atualizações sem descartar nenhuma das configurações do sysadmin.
@@ -28,7 +29,6 @@ Quaisquer pontos de montagem declarados no /etc/fstab do overlay, bem como servi
 
 **É uma boa prática existir uma montagem verdadeira para /home no fstab do sysadmin**, que será montada sobre o overlay. Ferramentas de gerenciamento de container (docker/podman) não funcionam corretamente quando seu armazenamento é um overlay. Crie um subvolume/partição para a home, e o coloque corretamente no fstab. O mesmo pode ser verdade (não testado) para bancos de dados e imagens de máquinas virtuais em /var. Se usa algumas dessas coisas no dia a dia, e precisa que fiquem em /var, tenha partições e subvolumes verdadeiros para montar apropriadamente. Se possuir montagens ANINHADAS(por ex, /home é um subvolume/partição, e /home/$USER/Documentos é outro),remova a última linha, referente ao overlay da home no scritp do hook, e regere o init. Enfim, teste suas montagens antes de migrar totalmente para Stateless Arch, e verifique se quaisquer inconsistências encontradas podem ser resolvidas simplesmente removendo a linha de montagem correspondente no init hook e regerando o init. Por motivos óbvios eu não consigo testar todos os casos de uso imagináveis.
 
-
 # Live-patch <h4>
 
 Ainda que não plenamente funcional, é possível atualizar o sistema e instalar/desinstalar pacotes sem reinício. E usando btrfs, e um simples hook no pacman, é possível gerar commits bootáveis antes de cada operação. O suporte a live-patch porém é experimental, portanto espere problemas do tipo:
@@ -37,10 +37,6 @@ Ainda que não plenamente funcional, é possível atualizar o sistema e instalar
 3. Os dois pontos acima são verdadeiros para atualização do sistema.
 
 **Ou seja, ainda que não totalmente necessário, leve como regra que, ao alterar PacmanRoot, reinicie. Não haverá telas de loading como em outros sistema por aí, a operação já ocorreu, só seu estado precisa ser fixado**
-
-Um leitor atento já percebeu que a ideia aqui é que PacmanRoot permaneça sempre em "estado de pacstrap": Qualquer commit da base terá somente pacotes do pacman, em seus padrões, somado à pouca configuração (senha root e locales) de /etc geradas durante a instalação; faça todo o resto no overlay do sysadmin, e na sua home, e você poderá enviar um commit de PacmanRoot para outra pessoa/dispositivo ( usando btrfs send/receive, tar, rsycn, ou que for), com a certeza de não enviar junto chaves ssh, senhas de wifi, ou outras informações sensíveis; use base-manager --reset-sysadmin-data, e no boot seguinte o sistema retornará em "modo de fábrica".
-
-Assim como no Suse MicroOS, e em qualquer sistema desse tipo, o sistema não é à prova de um sysadmin com nível de acesso root verdadeiro (e não de dentro de um container) que QUEIRA quebrar o sistema. Exemplos simples: troque o nome do subvolume root no Suse MicroOS, e reinicie, e o boot parará no init. Apague a configuração de boot do Clear Linux, e algo parecido ocorrerá. Apague grub.cfg do Fedora Silverblue, e se depare com grub-shell. Em qualquer que seja o sistema, um dd de dev/zero sobre o root o destrói, obviamente. Portanto, não se trata de desafiar o sysadmin a conseguir quebrar uma instalação, e sim de dificultar ao máximo que um sysadmin que quer MANTER uma instalação funcional a perca, e auxiliá-lo a replicar a instalação se necessário.
 
 # Implementação <h5>
 
@@ -59,7 +55,6 @@ implementar Stateless Arch em uma instalação nova é simples como:
 
 # Usabilidade <h6>
 
-
 Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver com algumas limitações e mudanças de usabilidade:
 
 * atualização e remoção de pacotes somente de forma mediada por pac-base, não diretamento pelo pacman(discutido a seguir). 
@@ -74,13 +69,11 @@ Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver co
 
 * devido o estado experimental do live-patch, se valer primariamente de flatpak, appimage, ou, minha alternativa preferida, o excelente Distrobox de 89luca89. Dado que tanto /var quando a home do usuario são separados (ver considerações na sessão sobre montagens), voltar commits da raiz não implica em perder acesso a nenhum desses programas. Delegue á base somente o suficiente para subir o modo gráfico, drivers em geral, suporte a hardware, virtualizadores, o suporte a containers,e outras ferrramentas que dependam de alto nivel de acesso, como por exemplo particionadores de disco.  Mesmo programas de edição de som são plenamente usáveis de dentro de um container (testado usando pipewire e wireplumber). O próprio DistroBox pode ser instalado na home de usuário. Os ícones de desktop de flatpaks, appimages e exportados via Distrobox surgem normalmente em sua área de trabalho, o funcionamento é totalmente transparente. E com distrobox é possível usar pacotes de outras distribuições, não somente do ArchLinux (eu tenho a leve impressão que a maior parte dos sysadmins de Stateless Arch usará Alpine como imagem padrão do Distrobox sempre que possível).
 
-
 # Manutenção <h7>
 
 Os scripts base-manager, pac-base e commit-root serão salvos em /usr/local/sbin, de forma que uma edição do sysadmin em seu próprio overlay valerá para alterar quaisquer parâmetros que queira. **Isso NÃO é verdadeiro para o hook do init.**
 
 Base-manager acumula muitas funções (veja uma lista rodando base-manager, e uma descrição detalhada rodando base-manager --help), e é através dele também que é facilitada a edição direta de PacmanRoot, através de base-manager --edit-pacmanroot. A base será montada, e plenamente acessível e manuseável conforme o sysadmin desejar. Um commit será gerado antes, portanto aguarde a atualização do bootloader. Para manter a consistência do sistema, evite ao máximo fazer uso disso.
-
 
 Atualizações e manuseio de programas **(leve em conta a sessão live-patch**) são possíveis usando pac-base, seguido da cli normal do pacman. Pac-base montará PacmanRoot diretamente, por cima dele uma montagem bind de /var/cache/pacman/pkg, /etc/mkinitcpio.conf, /etc/pacman.d, /etc/pacman.conf, /etc/default/grub, /etc/grub.d, /usr/local do sysadmin, e em seguida, provido por arch-install-scripts, executará "arch-chroot pacman" exportando os comandos passados para pac-base. Em /etc/pacman.d/hooks havera um hook pre operação, que apontara para o script commit-root. Como diz o nome, esse script será responsável por gerar um commit do root via snapshot btrfs antes da operação, e atualizar o grub.cfg. O excelente grub-btrfs de Antynea se encarregará de popular o menu de boot com os commits, para os quais se pode recorrer em caso de emergência. 
 
@@ -90,10 +83,13 @@ Caso use commit-root, será papel do sysadmin implementar quaisquer políticas q
 
 Base-manager --restore-root provê uma forma simples de tornar qualquer dos commits disponíveis em nova raíz a partir do boot seguinte; não é uma operação desttrutiva, e pode ser usado tanto a partir do boot normal, quanto a partir do boot de um dos commits. Só deve ser usado se seus commits forem gerados por commit-root; se usou outra ferramenta para gerar os commits, confie nela também para a restauração.
 
-
 # Considerações finais <h8>
 
+Um leitor atento já percebeu que a ideia aqui é que PacmanRoot permaneça sempre em "estado de pacstrap": Qualquer commit da base terá somente pacotes do pacman, em seus padrões, somado à pouca configuração (senha root e locales) de /etc geradas durante a instalação; faça todo o resto no overlay do sysadmin, e na sua home, e você poderá enviar um commit de PacmanRoot para outra pessoa/dispositivo ( usando btrfs send/receive, tar, rsycn, ou que for), com a certeza de não enviar junto chaves ssh, senhas de wifi, ou outras informações sensíveis; use base-manager --reset-sysadmin-data, e no boot seguinte o sistema retornará em "modo de fábrica".
+
 O sistema dessa forma será altamente resiliente. De fato, excetuando algo que afete diretamente o sistema de arquivos, ou apagar as imagens da grub (mbr do disco se disco mbr+legacy, partição biosboot se gpt+legacy, arquivos da partição fat-32 se efi), o sistema é facilmente recuperável em praticamente qualquer situação sem necessidade de live-boot. Novo kernel/driver de vídeo problemático? Use base-manager --restore-root em um commit anterior. A grub não encontrou o arquivo de   configuração e caiu no shell? Use a cli para chamar o configfile de qualquer um dos commits, todos eles terão um grub.cfg. Grub-rescue? Chame o binário da grub de qualquer um dos commits, e você terá o grub-shell completo, se onde será possível chamar o grub.cfg de qualquer um dos commits.
+
+Assim como no Suse MicroOS, e em qualquer sistema desse tipo, o sistema não é à prova de um sysadmin com nível de acesso root verdadeiro (e não de dentro de um container) que QUEIRA quebrar o sistema. Exemplos simples: troque o nome do subvolume root no Suse MicroOS, e reinicie, e o boot parará no init. Apague a configuração de boot do Clear Linux, e algo parecido ocorrerá. Apague grub.cfg do Fedora Silverblue, e se depare com grub-shell. Em qualquer que seja o sistema, um dd de dev/zero sobre o root o destrói, obviamente. Portanto, não se trata de desafiar o sysadmin a conseguir quebrar uma instalação, e sim de dificultar ao máximo que um sysadmin que quer MANTER uma instalação funcional a perca, e auxiliá-lo a replicar a instalação se necessário.
 
 O uso de Stateles Arch da forma em que está nesse momento já é possível , mas se trata de uma ferramenta beta. Mesmo quando for terminada, **NÃO SERÁ** indicada para usuários inexperientes. Problemas que exijam conhecimento de pontos de montagem, manipulação do processo de boot e de subvolumes btrfs podem surgir.
 
