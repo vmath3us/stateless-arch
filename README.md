@@ -12,8 +12,7 @@ Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLi
 Com mais uma pequena dose de bash script, aliado à capacidade de configurar o pacman de executar rotinas customizadas quaisquer pré operações, ganhamos a capacidade de, via sistema de arquivos, criar commits, a cada modificação de pacotes.
 
 # Arquitetura <h2>
-
-Dessa forma, ao concluir o boot, a raiz consistirá em três camadas, sendo:
+Ao concluir o boot, a raiz consistirá em três camadas, sendo:
 
 **Primeira camada: PacmanRoot**: um subvolume btrfs, com permissão de leitura e escrita, onde está instalado o ArchLinux, com todas as pastas do root, **incluindo** /boot (obviamente /boot/efi será um ponto de montagem para fat32 EFI durante a instalação da grub, se efi). Esse root pode inicialmente possuir configurações mínimas, somente senha root, locales, e os arquivos e modificações necessárias para que Stateless Arch funcione.O próprio fstab não precisa ficar aqui, sua edição durante a instalação do sistema pode ser ignorada. Esse subvolume é mantido com permissão de leitura e escrita, para que não sejam necessárias duas operações de commit (como no Suse MicroOS), durante o uso (mediado) do pacman. O uso direto do pacman (ou de qualquer ferramenta que seja, como por exemplo um rm -rf) para modificar PacmanRoot é impossível graças à segunda camada.
 
