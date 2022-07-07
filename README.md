@@ -68,7 +68,7 @@ Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver co
 
 Os scripts base-manager, pac-base e commit-root serão salvos em /usr/local/sbin, de forma que uma edição do sysadmin em seu próprio overlay valerá para alterar quaisquer parâmetros que queira. **Isso NÃO é verdadeiro para o hook do init.**
 
-Base-manager acumula cinco funções, uma delas foi citada acima, as demais serão discutidas brevemente abaixo; veja em detalhes clonando esse repositório, e executando base-manager --help
+Base-manager acumula cinco funções, uma delas foi citada acima, as demais serão discutidas brevemente abaixo; veja em detalhes clonando esse repositório, e executando base-manager --help (uma das funções).
 
 Atualizações e manuseio de programas **(leve em conta a sessão live-patch**) são possíveis usando pac-base, seguido da cli normal do pacman. Pac-base montará PacmanRoot diretamente, por cima dele uma montagem bind de /var/cache/pacman/pkg, /etc/mkinitcpio.conf, /etc/pacman.d, /etc/pacman.conf, /etc/default/grub, /etc/grub.d, /usr/local do sysadmin, e em seguida, provido por arch-install-scripts, executará "arch-chroot pacman" exportando os comandos passados para pac-base. Em /etc/pacman.d/hooks havera um hook pre operação, que apontara para o script commit-root. Como diz o nome, esse script será responsável por gerar um commit do root via snapshot btrfs antes da operação, e atualizar o grub.cfg. O excelente grub-btrfs de Antynea se encarregará de popular o menu de boot com os commits, para os quais se pode recorrer em caso de emergência. 
 
