@@ -58,9 +58,6 @@ Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver co
 
 * atualização e remoção de pacotes somente de forma mediada por pac-base, não diretamento pelo pacman(discutido a seguir). 
 
-* atualização do grub.cfg somente de forma mediada por base-manager --bootloader-update, e não diretamente pelo grub-mkconfig
-
-
 * como já deu para perceber, grub como bootloader é uma exigencia aqui. Faço isso para poder incluir o próprio kernel nos commits. Dado que a grub consegue lidar com kernel e initrd sob btrfs, comprimido ou não, seja em legacy ou em efi, se torna uma ferramenta com um fator social e até mesmo ambiental importante : hardware sem capacidade de boot efi continua sendo suportado, e ao ter toda a raiz inclusa em commits, a recuperação de uma atualização problemática, ou mesmo um reset total não passa por mais carga de acesso aos repositórios para baixar iso e pacotes. Mesmo implementar o ArchLinux em outra máquina se torna fácil como um btrfs send via ssh de seu último commit, com a certeza que isso não incluirá chaves ssh,configurações de sysadmins e grupos, pontos de acesso wifi, ou outras configurações sensíveis. O sistema está sempre em "estado de pacstrap", ou muito perto disso. 
 
 * a geração de locale-gen deve ser incluída diretamente na raiz, o que pode ser inconveniente caso o sysadmin troque constantemente de idioma; editar a raiz diretamente será discutido a seguir. Uma alternativa pode ser, durante a instalação do sistema, antes de implementar Stateless Arch, descomentar todos os locales em /etc/locale.gen, e gerar todos.
@@ -74,6 +71,8 @@ Os scripts base-manager, pac-base e commit-root serão salvos em /usr/local/sbin
 Base-manager acumula muitas funções (veja uma lista rodando base-manager, e uma descrição detalhada rodando base-manager --help), e é através dele também que é facilitada a edição direta de PacmanRoot.
 
 Atualizações e manuseio de programas **(leve em conta a sessão live-patch**) são possíveis usando pac-base, seguido da cli normal do pacman. Pac-base montará PacmanRoot diretamente, por cima dele uma montagem bind de /var/cache/pacman/pkg, /etc/mkinitcpio.conf, /etc/pacman.d, /etc/pacman.conf, /etc/default/grub, /etc/grub.d, /usr/local do sysadmin, e em seguida, provido por arch-install-scripts, executará "arch-chroot pacman" exportando os comandos passados para pac-base. Em /etc/pacman.d/hooks havera um hook pre operação, que apontara para o script commit-root. Como diz o nome, esse script será responsável por gerar um commit do root via snapshot btrfs antes da operação, e atualizar o grub.cfg. O excelente grub-btrfs de Antynea se encarregará de popular o menu de boot com os commits, para os quais se pode recorrer em caso de emergência. 
+
+A atualização do grub.cfg é possivel a partir de base-manager --bootloader-update, e não diretamente pelo grub-mkconfig. Edite /etc/default/grub normalmente em seu overlay, invoque base-manager, e ele cuidará do resto, criando antes um commit. 
 
 Todos os scripts foram escritos com foco em facilitar a leitura e a edição, qualquer comportamento pode ser alterado facilmente, com o sysadmin fazendo isso em seu próprio overlay, e as montagens bind de pac-base se encarregarão de fazer com que o pacman em PacmanRoot as use. Commit-root pode ser trocado por qualquer alternativa que funcione em ambiente chroot. Snapper + snap-pac e  Timershift + timeshift-autosnap não foram testados. 
 
