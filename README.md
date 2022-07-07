@@ -50,7 +50,7 @@ implementar Stateless Arch em uma instalação nova é simples como:
 * seguir as instruções finais do scritp (somente operações normais em qualquer instalação do ArchLinux)
 * reiniciar
 
-(é possível implementar numa instalação existente, mas os passos necessários mudam conforme o ponto de partida; deixo para você a tarefa de descobrir quais passos são esses :-) )
+(é possível implementar numa instalação existente, mas os passos necessários mudam conforme o ponto de partida; deixo para você a tarefa de descobrir quais passos são esses :wink:)
 
 # Usabilidade <h6>
 
