@@ -1,19 +1,24 @@
 #!/bin/bash
+########################################## to use in systemd.timer
 function garbage_config(){
     block_device_root="name_block_device_here"
     declare parameter
         parameter[1]="commit-root"
-        parameter[2]="commit-home"  ### example sufix name to home snapshots, case sensitive
+        parameter[2]="commit-home"  ### example sufix name to home subvol snapshots, case sensitive
         parameter[3]="commit-sysadmin-state" ### example sufix name to sysadmin subvol snapshots, case sensitive
         ##parameter[4]="sufix-name-commit"
-    declare preserve        ##### set preserve most recent commits number
-        preserve[1]="50"
-        preserve[2]="50"
-        preserve[3]="50"
+    declare preserve        ##### set preserve most recent commits number, per parameter, into quotes
+        preserve[1]="30"
+        preserve[2]="34"                    #   if equal 0, ALL subvols in parameter as deleted 
+        preserve[3]="57"
         ##parameter[4]="quantity preserve"
 #        _________________________________________________________________
-    ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, work to all parameter[n], insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
-      shield="pre|pos|created|int"
+    ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
+    declare shield
+        shield[1]="pre|pos|created|int"
+        shield[2]="another|parameter|here|"
+        shield[3]="Case|sensiTive|"
+        ##shield[4]="insert|shield|parameter|here"   # DISABLED SHIELD
     commit_garbage
 }
 function commit_garbage(){
@@ -21,10 +26,10 @@ function commit_garbage(){
     mount $block_device_root $toplevel_dir
     for position_array in ${!parameter[@]} ; do
         moment=$(date +%Y-%m-%d--%T)
-        if [  -z $shield ] ; then
-        subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | cut -f1 ))
+        if [    -z ${shield[$position_array]}   ] ; then
+            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | cut -f1 ))
         else
-        subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | grep -Ev $shield | cut -f1 ))
+            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | grep -Ev ${shield[$position_array]} | cut -f1 ))
         fi
         totalcandidate=${#subvol[@]}
         controller=0
@@ -32,11 +37,13 @@ function commit_garbage(){
         	    while [ $totalcandidate -gt ${preserve[$position_array]} ] ; do
                         btrfs su del -i ${subvol[$controller_array]} $toplevel_dir
                         btrfs filesystem sync $toplevel_dir
+                        echo "into while"
                             let --totalcandidate
                             let ++controller
         	    done
 	    echo " end clear old $parameter started in $moment"
     done
+    umount -R $toplevel_dir
     base-manager --bootloader-update-no-commit
 }
 garbage_config
