@@ -58,7 +58,7 @@ Ainda que não plenamente funcional, é possível atualizar o sistema e instalar
 
 Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver com algumas limitações e mudanças de usabilidade:
 
-* atualização e remoção de pacotes somente de forma mediada por pac-base, não diretamento pelo pacman(discutido a seguir). 
+* atualização e remoção de pacotes somente de forma mediada por pac-base, não diretamento pelo pacman(discutido a seguir), e reiniciando a cada modificação. 
 
 * como já deu para perceber, grub como bootloader é uma exigencia aqui. Faço isso para poder incluir o próprio kernel nos commits. Dado que a grub consegue lidar com kernel e initrd sob btrfs, comprimido ou não, seja em legacy ou em efi, se torna uma ferramenta com um fator social e até mesmo ambiental importante : hardware sem capacidade de boot efi continua sendo suportado, e ao ter toda a raiz inclusa em commits, a recuperação de uma atualização problemática, ou mesmo um reset total não passa por mais carga de acesso aos repositórios para baixar iso e pacotes. Mesmo implementar o ArchLinux em outra máquina se torna fácil como um btrfs send via ssh de seu último commit, com a certeza que isso não incluirá chaves ssh,configurações de sysadmins e grupos, pontos de acesso wifi, ou outras configurações sensíveis. PacmanRoot está sempre em "estado de pacstrap", ou muito perto disso. 
 
