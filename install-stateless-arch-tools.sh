@@ -130,7 +130,7 @@ function copy_scripts_to_root(){
   cp usr/local/sbin/remountfs /usr/local/sbin/remountfs &&\
   cp usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
   cp usr/local/sbin/commit-root /usr/local/sbin/commit-root &&\
-  cp usr/local/sbin/garbage-and-commit-root.original /usr/local/sbin/garbage-and-commit-root &&\
+  cp usr/local/sbin/garbage-and-commit-root /usr/local/sbin/garbage-and-commit-root &&\
   cp usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   cp usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
   mkdir -p /etc/pacman.d/hooks &&\
@@ -148,22 +148,35 @@ function copy_scripts_to_root(){
 }
 function end_implementation (){
   btrfs su cr $toplevel_dir/$default_sysadmin_data &&
-  btrfs filesystem sync $toplevel_dir &&
-  umount -Rv $toplevel_dir &&
-  printf "
-  O sistema de arquivos foi preparado, e os scripts estão nos locais e com as permissões corretas
-  edite /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot. (ler README para incompatibilidades)
-  Regere o init com mkinitcpio -P
-  Em seguida, (se efi), monte sua partição efi em /boot/efi,
-  INSTALE e ATUALIZE a grub e reinicie.
-  Ative o serviço remount.service (ler README)
-  Para iniciar sem stateless-mode-boot, aperte c no menu de boot,
-  adicione, ao final da linha do kernel
-  disablehooks=stateless-boot-mode, e aperte F10
+    if [ $? -eq 0 ] ; then
+            btrfs filesystem sync $toplevel_dir &&\
+            umount -Rv $toplevel_dir &&\
+            printf "
+            O sistema de arquivos foi preparado, e os scripts estão nos locais e com as permissões corretas
+            edite /etc/mkinitcpio.conf, colocando AO FINAL, como ULTIMO HOOK, stateless-mode-boot. (ler README para incompatibilidades)
+            Regere o init com mkinitcpio -P
+            Em seguida, (se efi), monte sua partição efi em /boot/efi,
+            INSTALE e ATUALIZE a grub e reinicie.
+            Para iniciar sem stateless-mode-boot, aperte c no menu de boot,
+            adicione, ao final da linha do kernel
+            disablehooks=stateless-boot-mode, e aperte F10
+          
+            Se assegure de ter lido E COMPREENDIDO completamente o README
 
-  Bem vindo ao Stateles Arch
+            Bem vindo ao Stateles Arch
+          
+"           
+            &&\
+            exit 0
 
+    else
+            printf "
+              um erro na manipulação dos subvolumes ocorreu, saindo com status de erro.
+              Verique suas alterações no cabeçalho do scritp de instalação, ou por colisão entre
+            os nomes aqui usados e seus subvolumes já existentes
 "
-  exit 0
+            &&\
+            exit 1
+    fi
 }
 welcome
