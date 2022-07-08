@@ -10,10 +10,15 @@ commit_verify
 }
 function commit_verify(){
  	mount $block_device_root $toplevel_dir -o "subvolid="5
-    if [ -z $parameter ] || [ -z $preserve ]; then
-        commit_root
-    else
-        commit_garbage_array
+    if [ $? -eq 0 ]; then
+        if [ -z $parameter ] || [ -z $preserve ]; then
+            commit_root
+        else
+            commit_garbage_array
+        fi
+    else 
+        echo "um erro na montagem do dispositivo de bloco ocorreu, interrompendo pacman, confira a configuração do hook"
+        && exit 1
     fi
 }
 function commit_garbage_array(){
