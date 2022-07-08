@@ -11,39 +11,39 @@ function garbage_config(){
         preserve[1]="30"
         preserve[2]="34"                    #   if equal 0, ALL subvols in parameter as deleted 
         preserve[3]="57"
-        ##parameter[4]="quantity preserve"
-#        _________________________________________________________________
+        ##parameter[4]="325"
     ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
     declare shield
-        shield[1]="pre|pos|created|int"
-        shield[2]="another|parameter|here|"
-        shield[3]="Case|sensiTive|"
+        shield[1]="pre|pos|created|int"                                     # shield to parameter[1]
+        shield[2]="another|parameter|here|"                                 # shield to parameter[2]
+        shield[3]="Case|sensiTive|"                                         # shield to parameter[3]
         ##shield[4]="insert|shield|parameter|here"   # DISABLED SHIELD
     commit_garbage
 }
 function commit_garbage(){
+        ##touch /var/log/garbagecommit.log               create, if no existing, logfile to garbage
         toplevel_dir=$(mktemp -d -p /tmp)
-    mount $block_device_root $toplevel_dir
-    for position_array in ${!parameter[@]} ; do
+        mount $block_device_root $toplevel_dir
+    for operator in ${!parameter[@]} ; do
         moment=$(date +%Y-%m-%d--%T)
-        if [    -z ${shield[$position_array]}   ] ; then
-            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | cut -f1 ))
+        if [    -z ${shield[$operator]}   ] ; then
+            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | cut -f1 ))
         else
-            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$position_array]} | grep -Ev ${shield[$position_array]} | cut -f1 ))
+            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | grep -Ev ${shield[$operator]} | cut -f1 ))
         fi
         totalcandidate=${#subvol[@]}
         controller=0
-	    echo "start clear old $parameter in $moment"
-        	    while [ $totalcandidate -gt ${preserve[$position_array]} ] ; do
-                        btrfs su del -i ${subvol[$controller_array]} $toplevel_dir
+	    echo "start clear old $parameter in $moment"  ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
+        	    while [ $totalcandidate -gt ${preserve[$operator]} ] ; do
+                        btrfs su del -i ${subvol[$controller_array]} $toplevel_dir ## >> /var/log/garbagecommit.log
                         btrfs filesystem sync $toplevel_dir
-                        echo "into while"
                             let --totalcandidate
                             let ++controller
         	    done
-	    echo " end clear old $parameter started in $moment"
+	    echo " end clear old $parameter started in $moment" ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
+
     done
-    umount -R $toplevel_dir
-    base-manager --bootloader-update-no-commit
+        umount -R $toplevel_dir
+        base-manager --bootloader-update-no-commit                  ### special entrypoint for garbage collectors in base-manager
 }
 garbage_config
