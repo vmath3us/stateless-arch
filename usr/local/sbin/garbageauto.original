@@ -15,8 +15,8 @@ function garbage_config(){
     ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
     declare shield
         shield[1]="pre|pos|created|int"                                     # shield to parameter[1]
-        shield[2]="another|parameter|here|"                                 # shield to parameter[2]
-        shield[3]="Case|sensiTive|"                                         # shield to parameter[3]
+        shield[2]="another|parameter|here"                                  # shield to parameter[2]
+        shield[3]="Case|sensiTive"                                          # shield to parameter[3]
         ##shield[4]="insert|shield|parameter|here"   # DISABLED SHIELD
     commit_garbage
 }
