@@ -113,6 +113,8 @@ function bootloader_update(){
   moment=$(date +%Y-%m-%d--%T)
   mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
   btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-update-grub--$moment &&\
+  btrfs filesystem sync $toplevel_dir &&\
+  umount $toplevel_dir &&\
   bootloader_update_p2
 }
 function bootloader_update_p2(){
@@ -183,15 +185,17 @@ function restore_root_p2(){
     moment=$(date +%Y-%m-%d--%T)
     mount $block_device_root $restore_dir -o "subvolid="$id_to_restore &&\
     btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root--deprecated--$moment &&\
-    sync &&\
     btrfs filesystem sync $toplevel_dir &&\
+    sync &&\
     btrfs su del $toplevel_dir/$default_root &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    sync &&\
     btrfs su snap $restore_dir $toplevel_dir/$default_root &&\
-    sync &&\
     btrfs filesystem sync $toplevel_dir &&\
+    sync &&\
     umount -Rv $restore_dir &&\
-    sync &&\
     btrfs filesystem sync $toplevel_dir &&\
+    sync &&\
     umount -Rv $toplevel_dir &&\
 printf "restauração concluída, reinicie para usar"
     exit 0
@@ -362,11 +366,11 @@ printf "Entrando em chroot
                      ;;
                  esac
       ;;
-      ################################ silent function ###########################################
-    --bootloader-update-no-commit)
+      ################################ entrypoint for garbage collector ###########################################
+      --bootloader-update-no-commit)
             bootloader_update_p2
             ;;
-      ################################ silent function ###########################################
+      #############################################################################################################
                     *)
         stateless_arch_welcome
         display_functions
