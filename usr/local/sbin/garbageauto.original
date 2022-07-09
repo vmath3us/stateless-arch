@@ -3,14 +3,14 @@
 function garbage_config(){
     block_device_root="name_block_device_here"
     declare parameter
-        parameter[1]="commit-root"
+        parameter[1]="base-manager"
         parameter[2]="commit-home"  ### example sufix name to home subvol snapshots, case sensitive
         parameter[3]="commit-sysadmin-state" ### example sufix name to sysadmin subvol snapshots, case sensitive
         ##parameter[4]="sufix-name-commit"
     declare preserve        ##### set preserve most recent commits number, per parameter, into quotes
-        preserve[1]="30"
-        preserve[2]="34"                    #   if equal 0, ALL subvols in parameter as deleted 
-        preserve[3]="57"
+        preserve[1]="1"
+        preserve[2]="5"                    #   if equal 0, ALL subvols in parameter as deleted 
+        preserve[3]="7"
         ##parameter[4]="325"
     ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
     declare shield
@@ -32,16 +32,16 @@ function commit_garbage(){
             subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | grep -Ev ${shield[$operator]} | cut -f1 ))
         fi
         totalcandidate=${#subvol[@]}
-        controller=0
-	    echo "start clear old $parameter in $moment"  ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
-        	    while [ $totalcandidate -gt ${preserve[$operator]} ] ; do
-                        btrfs su del -i ${subvol[$controller_array]} $toplevel_dir ## >> /var/log/garbagecommit.log
+        controller=${preserve[$operator]}
+        array_position=0
+	    echo "start clear old ${parameter[$operator]} in $moment"  ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
+        	    while [ $totalcandidate -gt $controller ] ; do
+                        btrfs su del -i ${subvol[$array_position]} $toplevel_dir ## >> /var/log/garbagecommit.log
                         btrfs filesystem sync $toplevel_dir
                             let --totalcandidate
-                            let ++controller
+                            let ++array_position
         	    done
-	    echo " end clear old $parameter started in $moment" ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
-
+	    echo " end clear old ${parameter[$operator]} started in $moment" ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
     done
         umount -R $toplevel_dir
         base-manager --bootloader-update-no-commit                  ### special entrypoint for garbage collectors in base-manager
