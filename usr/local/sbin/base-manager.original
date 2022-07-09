@@ -166,7 +166,8 @@ printf "
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
            ATENÇÃO: se você está usando outra ferramenta para gerar os commits, use-a também para restaurar,
-           e não esse scritp"
+           e não esse scritp
+"
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
                  y|Y)
