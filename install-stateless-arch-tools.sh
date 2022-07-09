@@ -165,8 +165,7 @@ function end_implementation (){
 
             Bem vindo ao Stateles Arch
           
-"           
-            &&\
+"           &&
             exit 0
 
     else
@@ -175,7 +174,7 @@ function end_implementation (){
               Verique suas alterações no cabeçalho do scritp de instalação, ou por colisão entre
             os nomes aqui usados e seus subvolumes já existentes
 "
-            &&\
+            &&
             exit 1
     fi
 }
