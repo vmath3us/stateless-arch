@@ -131,6 +131,7 @@ function copy_scripts_to_root(){
   cp usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
   cp usr/local/sbin/commit-root /usr/local/sbin/commit-root &&\
   cp usr/local/sbin/garbage-and-commit-root /usr/local/sbin/garbage-and-commit-root &&\
+  cp usr/local/sbin/garbageauto /usr/local/sbin/garbageauto &&\
   cp usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   cp usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
   mkdir -p /etc/pacman.d/hooks &&\
