@@ -3,12 +3,12 @@
 function garbage_config(){
     block_device_root="name_block_device_here"
     declare parameter
-        parameter[1]="base-manager"
+        parameter[1]="commit-root"
         parameter[2]="commit-home"  ### example sufix name to home subvol snapshots, case sensitive
         parameter[3]="commit-sysadmin-state" ### example sufix name to sysadmin subvol snapshots, case sensitive
         ##parameter[4]="sufix-name-commit"
     declare preserve        ##### set preserve most recent commits number, per parameter, into quotes
-        preserve[1]="1"
+        preserve[1]="3"
         preserve[2]="5"                    #   if equal 0, ALL subvols in parameter as deleted 
         preserve[3]="7"
         ##parameter[4]="325"
