@@ -101,7 +101,7 @@ function help_bootloader_update(){
   Adicione e remova parâmetros de kernel, ou outras customizações que queira,
   em /etc/default/grub, ou /etc/grub.d, conforme a documentação oficial.
   Você deve editar o SEU /etc/default/grub, não via --edit-pacmanroot,
-  e usar "base-manager --bootloader-update" também FORA de --edit-pacmanroot.
+  e usar base-manager --bootloader-update também FORA de --edit-pacmanroot.
   Pode ser usado após --restore-root
   "
 
@@ -152,9 +152,13 @@ printf "
   Abre um menu com a lista de commits do root
   Escolha um deles, aguarde o fim da operação,
   e será a nova raiz padrão no próximo início do sistema
+  ESSA OPERAÇÃO IRÁ CRIAR UM COMMIT READ-ONLY DO PADRÃO DE BOOT (para futura inspeção), e **DELETÁ-LO**,
+  SÓ USE --restore-root SE BOOT CORRENTE FOI EM UM COMMIT.
+  ATENÇÃO: se você está usando outra ferramenta para gerar os commits,
+  use-a também para restaurar, e não esse scritp
 
   
-  "
+"
 }
 
 ########################################################################################################################
@@ -165,8 +169,6 @@ printf "
            pré --bootloader-update e pré --edit-pacmanroot.
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
-           ATENÇÃO: se você está usando outra ferramenta para gerar os commits, use-a também para restaurar,
-           e não esse scritp
 "
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
@@ -263,7 +265,8 @@ function help_edit_pacman_root(){
 
 
   O --edit-pacmanroot consiste em um terminal chroot onde é possível
-  editar arquivos DA RAIZ PADRÃO ATUAL. Um commit será gerado antes.
+  editar arquivos DA RAIZ PADRÃO ATUAL. Um commit será gerado antes,
+  portanto aguarde a atualização do bootloader.
   É possível integrar programas, remover programas,
   adicionar módulos de kernel,ou qualquer operação que esteja documentada na wiki.
   Não necessáriamente exige reinício, depende do que for modificado.
@@ -291,7 +294,7 @@ function help_edit_pacman_root(){
 function edit_pacman_root (){
       moment=$(date +%Y-%m-%d--%T)
       mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-      btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-rw-root--$moment &&\
+      btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre--edit-pacmanroot--$moment &&\
       btrfs filesystem sync $toplevel_dir &&\
       mount $block_device_root $edit_base_dir -o "subvol="$default_root &&\
       mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
@@ -303,10 +306,10 @@ function edit_pacman_root (){
       mount --bind /etc/pacman.conf $edit_base_dir/etc/pacman.conf &&\
       mount --bind /etc/mkinitcpio.conf $edit_base_dir/etc/mkinitcpio.conf &&\
       mount --bind /etc/mkinitcpio.d $edit_base_dir/etc/mkinitcpio.d &&\
-printf "Atualizando bootloader
+printf "Atualizando bootloader ...
 " &&\
-      arch-chroot $edit_base_dir $update_grub_command &&\
-printf "Entrando em chroot
+      arch-chroot $edit_base_dir $update_grub_command 2> /dev/null &&\
+printf "Entrando em PacmanRoot
 "
     arch-chroot $edit_base_dir
 	umount -Rv $edit_base_dir
