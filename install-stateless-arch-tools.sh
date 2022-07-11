@@ -74,7 +74,7 @@ function check_deps (){
   fi
 }
 function manage_files(){
-  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/commit-root.original ] && [ -f usr/local/sbin/pac-base.original ] && [ -f usr/local/sbin/garbageauto.original ] && [ -f usr/local/sbin/garbageauto.original ] ; then
+  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/commit-root.original ] && [ -f usr/local/sbin/pac-base.original ] && [ -f usr/local/sbin/garbageauto.original ] && [ -f usr/local/sbin/garbage-and-commit-root.original ] ; then
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/base-manager.original > usr/local/sbin/base-manager &&\
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/pac-base.original > usr/local/sbin/pac-base &&\
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/commit-root.original > usr/local/sbin/commit-root &&\
@@ -91,6 +91,7 @@ function manage_files(){
 }
 function last_chance (){
 time=15
+sleep 1s
 while [ $time -ge 1 ] ; do
   printf "
 
