@@ -312,7 +312,8 @@ printf "Atualizando bootloader ...
 printf "Entrando em PacmanRoot
 "
     arch-chroot $edit_base_dir
-	umount -Rv $edit_base_dir
+	umount -Rv $edit_base_dir &&
+    umount -Rv $toplevel_dir
 }
 
 ########################################################################################################################
