@@ -1,24 +1,10 @@
 #!/bin/bash
 ########################################################################################################################
 ########################################################################################################################
-########################################################################################################################
-###############################################--global-vars--##########################################################
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
-
-toplevel_dir=$(mktemp -d -p /tmp)
-update_grub_dir=$(mktemp -d -p /tmp)
-restore_dir=$(mktemp -d -p /tmp)
-edit_base_dir=$(mktemp -d -p /tmp)
-update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
-
-########################################################################################################################
-########################################################################################################################
 ##################################--sysadmin-complete-data-in-implementation--##############################################
 ########################################################################################################################
 ########################################################################################################################
-#######################################--change-inside-the-quotes---####################################################
+#######################################--change-inside-quotes---####################################################
 ########################################################################################################################
 ########################################################################################################################
 
@@ -30,7 +16,7 @@ default_root="@base_system"
 ##########################--please-edit-here-and-in-/usr/lib/initcpio/hooks/stateless-mode-boot--#######################
 ########################################################################################################################
 ########################################################################################################################:
-#########################################--change-inside-the-quotes---##################################################
+#########################################--change-inside-quotes---##################################################
 ########################################################################################################################
 ########################################################################################################################
 
@@ -90,6 +76,46 @@ function help_global (){
   text_help_global | less
 }
 
+function pre_mount_work(){
+toplevel_dir=$(mktemp -d -p /tmp)
+root_dir=$(mktemp -d -p /tmp)
+update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
+    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
+    mount $block_device_root $root_dir -o "subvol="$default_root &&\
+      mount --bind /usr/local/ $root_dir/usr/local/ &&\
+      mount --bind /etc/grub.d $root_dir/etc/grub.d &&\
+      mount --bind /etc/default/grub $root_dir/etc/default/grub &&\
+      mount --bind /etc/default/grub-btrfs/ $root_dir/etc/default/grub-btrfs/ &&\
+      mount --bind /etc/pacman.d/ $root_dir/etc/pacman.d &&\
+      mount --bind /etc/pacman.conf $root_dir/etc/pacman.conf &&\
+      mount --bind /etc/mkinitcpio.conf $root_dir/etc/mkinitcpio.conf &&\
+      mount --bind /etc/mkinitcpio.d $root_dir/etc/mkinitcpio.d &&\
+      mount --bind /var/cache/pacman/pkg $root_dir/var/cache/pacman/pkg &&\
+      switch_to_operation
+}
+function switch_to_operation(){
+      case $menu_select in
+        --bootloader-update)
+              bootloader_update
+              ;;
+        --restore-root)
+              restore_root
+              ;;
+        --reset-sysadmin-data)
+              reset_sysadmin_data
+              ;;
+        --edit-pacmanroot)
+              edit_pacman_root
+              ;;
+##################################################### entrypoint for gargabe-collector ###############################################
+        --bootloader-update-no-commit)              
+              bootloader_update_p2
+########################################################################################################################
+              ;;
+   esac
+
+  
+}
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -111,32 +137,19 @@ function help_bootloader_update(){
 
 function bootloader_update(){
   moment=$(date +%Y-%m-%d--%T)
-  mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-update-grub--$moment &&\
+ btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-bootloader-update--$moment &&\
   btrfs filesystem sync $toplevel_dir &&\
   umount $toplevel_dir &&\
   bootloader_update_p2
 }
 function bootloader_update_p2(){
-  mount $block_device_root $update_grub_dir -o "subvol="$default_root &&\
-      mount --bind /usr/local/ $update_grub_dir/usr/local/ &&\
-      mount --bind /etc/grub.d $update_grub_dir/etc/grub.d &&\
-      mount --bind /etc/default/grub $update_grub_dir/etc/default/grub &&\
-      mount --bind /etc/default/grub-btrfs/ $update_grub_dir/etc/default/grub-btrfs/ &&\
-      mount --bind /etc/pacman.d/ $update_grub_dir/etc/pacman.d &&\
-      mount --bind /etc/pacman.conf $update_grub_dir/etc/pacman.conf &&\
-      mount --bind /etc/mkinitcpio.conf $update_grub_dir/etc/mkinitcpio.conf &&\
-      mount --bind /etc/mkinitcpio.d $update_grub_dir/etc/mkinitcpio.d &&\
-  echo "entrando em ambiente chroot" &&\
-  bootloader_update_p3
-}
-function bootloader_update_p3(){
-  arch-chroot $update_grub_dir $update_grub_command
+ echo "entrando em ambiente chroot" &&\
+  arch-chroot $root_dir $update_grub_command
   if [ $? -eq 0 ] ; then
-    umount -Rv $update_grub_dir &&\
+    umount -Rv $root_dir &&\
     printf "a configuração do bootloader foi atualizada com sucesso"
   else
-    umount -Rv $update_grub_dir &&\
+    umount -Rv $root_dir &&\
     printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customizações"
   fi
 }
@@ -153,7 +166,7 @@ printf "
   Escolha um deles, aguarde o fim da operação,
   e será a nova raiz padrão no próximo início do sistema
   ESSA OPERAÇÃO IRÁ CRIAR UM COMMIT READ-ONLY DO PADRÃO DE BOOT (para futura inspeção), e **DELETÁ-LO**,
-  SÓ USE --restore-root SE BOOT CORRENTE FOI EM UM COMMIT.
+  SÓ USE --restore-root SE O BOOT CORRENTE FOI EM UM COMMIT.
   ATENÇÃO: se você está usando outra ferramenta para gerar os commits,
   use-a também para restaurar, e não esse scritp
 
@@ -173,7 +186,6 @@ printf "
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
                  y|Y)
-                mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
                 btrfs su l -s $toplevel_dir | grep commit-root--
                 read -p "restaurar commit ID: " id_to_restore
                 restore_root_p2
@@ -185,8 +197,9 @@ printf "
 }
 
 function restore_root_p2(){
+    restore_dir=$(mktemp -d -p /tmp)
     moment=$(date +%Y-%m-%d--%T)
-    mount $block_device_root $restore_dir -o "subvolid="$id_to_restore &&\
+    mount $block_device_root -o "subvolid="$id_to_restore $restore_dir
     btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root--deprecated--$moment &&\
     btrfs filesystem sync $toplevel_dir &&\
     sync &&\
@@ -196,10 +209,12 @@ function restore_root_p2(){
     btrfs su snap $restore_dir $toplevel_dir/$default_root &&\
     btrfs filesystem sync $toplevel_dir &&\
     sync &&\
-    umount -Rv $restore_dir &&\
+    umount -Rv $root_dir &&\
     btrfs filesystem sync $toplevel_dir &&\
     sync &&\
+    umount -Rv $root_dir &&\
     umount -Rv $toplevel_dir &&\
+    umount -Rv $restore_dir &&\
 printf "restauração concluída, reinicie para usar"
     exit 0
 }
@@ -238,15 +253,20 @@ function help_reset_sysadmin_data(){
 
 function reset_sysadmin_data(){
     moment=$(date +%Y-%m-%d--%T)
-    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
     mv $toplevel_dir/$default_sysadmin_data $toplevel_dir/@sysadmin-state--deprecated--$moment -v &&
+    btrfs filesystem sync $toplevel_dir &&\
+    sync &&\
     printf "
     criando novo subvolume para dados de usuário...
-    " &&
+" &&
     btrfs su cr $toplevel_dir/$default_sysadmin_data &&
+    btrfs filesystem sync $toplevel_dir &&\
+    sync &&\
     printf "
     Dados de sysadmin movidos com sucesso, deletá-los completamente é sua responsabilidade
-    "
+"	umount -Rv $root_dir &&
+    umount -Rv $toplevel_dir
+
 }
 
 ########################################################################################################################
@@ -293,26 +313,15 @@ function help_edit_pacman_root(){
 
 function edit_pacman_root (){
       moment=$(date +%Y-%m-%d--%T)
-      mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
       btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre--edit-pacmanroot--$moment &&\
       btrfs filesystem sync $toplevel_dir &&\
-      mount $block_device_root $edit_base_dir -o "subvol="$default_root &&\
-      mount --bind /usr/local/ $edit_base_dir/usr/local/ &&\
-      mount --bind /var/cache/pacman/pkg $edit_base_dir/var/cache/pacman/pkg &&\
-      mount --bind /etc/grub.d $edit_base_dir/etc/grub.d &&\
-      mount --bind /etc/default/grub $edit_base_dir/etc/default/grub &&\
-      mount --bind /etc/default/grub-btrfs $edit_base_dir/etc/default/grub-btrfs &&\
-      mount --bind /etc/pacman.d/ $edit_base_dir/etc/pacman.d &&\
-      mount --bind /etc/pacman.conf $edit_base_dir/etc/pacman.conf &&\
-      mount --bind /etc/mkinitcpio.conf $edit_base_dir/etc/mkinitcpio.conf &&\
-      mount --bind /etc/mkinitcpio.d $edit_base_dir/etc/mkinitcpio.d &&\
 printf "Atualizando bootloader ...
 " &&\
-      arch-chroot $edit_base_dir $update_grub_command 2> /dev/null &&\
+      arch-chroot $root_dir $update_grub_command 2> /dev/null &&\
 printf "Entrando em PacmanRoot
 "
-    arch-chroot $edit_base_dir
-	umount -Rv $edit_base_dir &&
+    arch-chroot $root_dir
+	umount -Rv $root_dir &&
     umount -Rv $toplevel_dir
 }
 
@@ -322,59 +331,53 @@ printf "Entrando em PacmanRoot
 ##############################################--start-menu-and-asks--###################################################
 ########################################################################################################################
 ########################################################################################################################
-########################################################################################################################
+function terms_user_base_manager(){
+      read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use
+        case $terms_use in
+          *)
+            pre_mount_work
+            ;;
+        esac
+        
+}
+#######################################################################################################################
       case $@ in
       --help)
             help_global
-      ;;
+                ;;
       --bootloader-update)
+          menu_select=$@
             clear
             stateless_arch_welcome
             help_bootloader_update
-              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
-                 case $terms_use_root_manager in
-                   *)
-                     bootloader_update
-                     ;;
-                   esac
-      ;;
+            terms_user_base_manager
+                ;;
       --restore-root)
+          menu_select=$@
             clear
             stateless_arch_welcome
             help_restore_root
-              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
-                  case $terms_use_root_manager in
-                    *)
-                      restore_root
-                      ;;
-                    esac
-      ;;
+            terms_user_base_manager
+                ;;
       --reset-sysadmin-data)
+          menu_select=$@
             clear
             stateless_arch_welcome
             help_reset_sysadmin_data
-              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
-                  case $terms_use_root_manager in
-                    *)
-                      reset_sysadmin_data
-                      ;;
-                    esac
-      ;;
+            terms_user_base_manager
+                ;;
       --edit-pacmanroot)
+          menu_select=$@
             clear
             stateless_arch_welcome
             help_edit_pacman_root
-              read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use_root_manager
-                 case $terms_use_root_manager in
-                   *)
-                     edit_pacman_root
-                     ;;
-                 esac
-      ;;
+            terms_user_base_manager
+                ;;
       ################################ entrypoint for garbage collector ###########################################
       --bootloader-update-no-commit)
-            bootloader_update_p2
-            ;;
+          menu_select=$@
+            pre_mount_work
+                ;;
       #############################################################################################################
                     *)
         stateless_arch_welcome
