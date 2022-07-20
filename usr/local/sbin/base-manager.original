@@ -136,7 +136,7 @@ function help_bootloader_update(){
 ########################################################################################################################
 
 function bootloader_update(){
-  moment=$(date +%Y-%m-%d--%T)
+  moment=$(date +%Y-%m-%d--%H-%M-%S)
  btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-bootloader-update--$moment &&\
   btrfs filesystem sync $toplevel_dir &&\
   umount $toplevel_dir &&\
@@ -198,7 +198,7 @@ printf "
 
 function restore_root_p2(){
     restore_dir=$(mktemp -d -p /tmp)
-    moment=$(date +%Y-%m-%d--%T)
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
     mount $block_device_root -o "subvolid="$id_to_restore $restore_dir
     btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root--deprecated--$moment &&\
     btrfs filesystem sync $toplevel_dir &&\
@@ -252,7 +252,7 @@ function help_reset_sysadmin_data(){
 ########################################################################################################################
 
 function reset_sysadmin_data(){
-    moment=$(date +%Y-%m-%d--%T)
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
     mv $toplevel_dir/$default_sysadmin_data $toplevel_dir/@sysadmin-state--deprecated--$moment -v &&
     btrfs filesystem sync $toplevel_dir &&\
     sync &&\
@@ -312,7 +312,7 @@ function help_edit_pacman_root(){
 ########################################################################################################################
 
 function edit_pacman_root (){
-      moment=$(date +%Y-%m-%d--%T)
+      moment=$(date +%Y-%m-%d--%H-%M-%S)
       btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre--edit-pacmanroot--$moment &&\
       btrfs filesystem sync $toplevel_dir &&\
 printf "Atualizando bootloader ...

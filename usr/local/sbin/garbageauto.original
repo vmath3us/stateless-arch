@@ -25,7 +25,7 @@ function commit_garbage(){
         toplevel_dir=$(mktemp -d -p /tmp)
         mount $block_device_root $toplevel_dir
     for operator in ${!parameter[@]} ; do
-        moment=$(date +%Y-%m-%d--%T)
+        moment=$(date +%Y-%m-%d--%H-%M-%S)
         if [    -z ${shield[$operator]}   ] ; then
             subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | cut -f1 ))
         else

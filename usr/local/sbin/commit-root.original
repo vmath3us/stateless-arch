@@ -1,7 +1,7 @@
 #!/bin/bash
 function commit_root(){
   toplevel_dir=$(mktemp -d -p /tmp)
-  moment=$(date +%Y-%m-%d--%T)
+  moment=$(date +%Y-%m-%d--%H-%M-%S)
     mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
     btrfs su snap -r / $toplevel_dir/@commit-root--$moment &&\
     btrfs filesystem sync / &&\

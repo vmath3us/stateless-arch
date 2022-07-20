@@ -53,7 +53,7 @@ function commit_garbage(){
        	commit_root
 }
 function commit_root(){
-    moment=$(date +%Y-%m-%d--%T)
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
     btrfs su snap -r / $toplevel_dir/@commit-root--$moment &&\
     btrfs filesystem sync / &&\
     grub-mkconfig -o /boot/grub/grub.cfg &&
