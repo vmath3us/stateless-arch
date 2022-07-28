@@ -104,3 +104,5 @@ O uso de Stateles Arch da forma em que está nesse momento já é possível , ma
 **A máquina é sua, o sistema de arquivos é seu, a decisão de usar esses scripts foi sua, portanto os riscos e prejuízos são seus.**
 
 **O suporte a luks e a secure-boot não foi testado.**
+
+Para construir rapidamente um setup Stateless Arch focado em utilização de containers (semelhante ao Suse MicroOs e ao Fedora Silverblue), visite [Arch Start](https://github.com/vmath3us/arch-start). Lá estará um espelho da minha própria máquina, de forma que, de posse daquele repositório e desse, minha instalação é reproduzível.
