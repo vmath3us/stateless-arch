@@ -175,8 +175,7 @@ function end_implementation (){
               um erro na manipulação dos subvolumes ocorreu, saindo com status de erro.
               Verique suas alterações no cabeçalho do scritp de instalação, ou por colisão entre
             os nomes aqui usados e seus subvolumes já existentes
-"
-            &&
+" &&
             exit 1
     fi
 }
