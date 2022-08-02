@@ -10,6 +10,7 @@
 
 block_device_root="name_block_device_here"
 default_root="@base_system"
+default_head="@root"
 
 ########################################################################################################################
 ########################################################################################################################
@@ -75,46 +76,82 @@ function text_help_global(){
 function help_global (){
   text_help_global | less
 }
-
-function pre_mount_work(){
-toplevel_dir=$(mktemp -d -p /tmp)
-root_dir=$(mktemp -d -p /tmp)
-update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
-    mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-    mount $block_device_root $root_dir -o "subvol="$default_root &&\
-      mount --bind /usr/local/ $root_dir/usr/local/ &&\
-      mount --bind /etc/grub.d $root_dir/etc/grub.d &&\
-      mount --bind /etc/default/grub $root_dir/etc/default/grub &&\
-      mount --bind /etc/default/grub-btrfs/ $root_dir/etc/default/grub-btrfs/ &&\
-      mount --bind /etc/pacman.d/ $root_dir/etc/pacman.d &&\
-      mount --bind /etc/pacman.conf $root_dir/etc/pacman.conf &&\
-      mount --bind /etc/mkinitcpio.conf $root_dir/etc/mkinitcpio.conf &&\
-      mount --bind /etc/mkinitcpio.d $root_dir/etc/mkinitcpio.d &&\
-      mount --bind /var/cache/pacman/pkg $root_dir/var/cache/pacman/pkg &&\
-      switch_to_operation
-}
-function switch_to_operation(){
+function type_operation_select(){
       case $menu_select in
         --bootloader-update)
-              bootloader_update
+            pre_mount_work
+            transactional_operation_1
+            bootloader_update
               ;;
         --restore-root)
-              restore_root
+            pre_mount_work
+            restore_root
               ;;
         --reset-sysadmin-data)
-              reset_sysadmin_data
+            pre_mount_work
+            reset_sysadmin_data
               ;;
         --edit-pacmanroot)
-              edit_pacman_root
+            pre_mount_work
+            transactional_operation_1
+            edit_pacman_root
               ;;
-##################################################### entrypoint for gargabe-collector ###############################################
-        --bootloader-update-no-commit)              
-              bootloader_update_p2
-########################################################################################################################
-              ;;
+        --pos-restore)
+            transactional_operation_2
+            bootloader_update
+            ;;
    esac
 
   
+}
+function pre_mount_work(){
+toplevel_dir=$(mktemp -d -p /tmp)
+update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
+mount $block_device_root $toplevel_dir -o "subvolid="5
+}
+function transactional_operation_1(){
+moment=$(date +%Y-%m-%d--%H-%M-%S)
+commit_name="@commit-root$menu_select"
+    mv $toplevel_dir/$default_head $toplevel_dir/$commit_name--$moment &&\
+    btrfs su cr $toplevel_dir/$default_head &&\
+    btrfs su snap $toplevel_dir/@commit-root$menu_select--$moment/$default_root $toplevel_dir/$default_head/$default_root &&\
+    transactional_operation_2
+}
+function transactional_operation_2(){
+transactional_dir=$(mktemp -d -p /tmp) 
+    mount $block_device_root $transactional_dir -o "subvol="$default_head/$default_root &&\
+      mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
+      mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
+      mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
+      mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/ &&\
+      mount --bind /etc/pacman.d/ $transactional_dir/etc/pacman.d &&\
+      mount --bind /etc/pacman.conf $transactional_dir/etc/pacman.conf &&\
+      mount --bind /etc/mkinitcpio.conf $transactional_dir/etc/mkinitcpio.conf &&\
+      mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
+      mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
+}
+function end_base_manager(){
+    umount -Rv $transactional_dir &&\
+    mv $toplevel_dir/$default_head/$default_root $toplevel_dir/@transactional &&\
+    btrfs su snap -r $toplevel_dir/@transactional $toplevel_dir/$default_head/$default_root &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    btrfs su del $toplevel_dir/@transactional &&\
+    umount -Rv $toplevel_dir &&\
+    rmdir $transactional_dir &&\
+    rmdir $toplevel_dir &&\
+    echo "commit transicionado com sucesso, reinicie para ver o resultado" &&\
+    exit 0
+}
+function end_base_manager_error(){
+    umount -Rv $transactional_dir &&\
+    btrfs su del $toplevel_dir/$default_head/$default_root &&\
+    mv $toplevel_dir/$commit_name--$moment $toplevel_dir/$default_head &&\
+    umount -Rv $toplevel_dir &&\
+    rmdir $transactional_dir &&\
+    rmdir $toplevel_dir &&\
+    echo "um erro ocorreu na atual transação de commit. O commit bem suscedido mais recente foi promovido. Saindo com status de erro" &&\
+    exit 1
+
 }
 ########################################################################################################################
 ########################################################################################################################
@@ -136,21 +173,14 @@ function help_bootloader_update(){
 ########################################################################################################################
 
 function bootloader_update(){
-  moment=$(date +%Y-%m-%d--%H-%M-%S)
- btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre-bootloader-update--$moment &&\
-  btrfs filesystem sync $toplevel_dir &&\
-  umount $toplevel_dir &&\
-  bootloader_update_p2
-}
-function bootloader_update_p2(){
  echo "entrando em ambiente chroot" &&\
-  arch-chroot $root_dir $update_grub_command
+  arch-chroot $transactional_dir $update_grub_command
   if [ $? -eq 0 ] ; then
-    umount -Rv $root_dir &&\
-    printf "a configuração do bootloader foi atualizada com sucesso"
+    printf "a configuração do bootloader foi atualizada com sucesso" &&\
+    end_base_manager
   else
-    umount -Rv $root_dir &&\
-    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas customizações"
+    printf "A atualização de configuração do bootloader saiu com status de erro, reveja suas configurações" &&\
+    end_base_manager_error
   fi
 }
 
@@ -200,23 +230,9 @@ function restore_root_p2(){
     restore_dir=$(mktemp -d -p /tmp)
     moment=$(date +%Y-%m-%d--%H-%M-%S)
     mount $block_device_root -o "subvolid="$id_to_restore $restore_dir
-    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root--deprecated--$moment &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    sync &&\
-    btrfs su del $toplevel_dir/$default_root &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    sync &&\
-    btrfs su snap $restore_dir $toplevel_dir/$default_root &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    sync &&\
-    umount -Rv $root_dir &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    sync &&\
-    umount -Rv $root_dir &&\
-    umount -Rv $toplevel_dir &&\
-    umount -Rv $restore_dir &&\
-printf "restauração concluída, reinicie para usar"
-    exit 0
+    btrfs su snap $restore_dir $toplevel_dir/$default_head/@transactional &&\
+    menu_select="--pos-restore" &&\
+    type_operation_select
 }
 
 ########################################################################################################################
@@ -263,9 +279,8 @@ function reset_sysadmin_data(){
     btrfs filesystem sync $toplevel_dir &&\
     sync &&\
     printf "
-    Dados de sysadmin movidos com sucesso, deletá-los completamente é sua responsabilidade
-"	umount -Rv $root_dir &&
-    umount -Rv $toplevel_dir
+    Dados de sysadmin movidos com sucesso, deletá-los completamente é sua responsabilidade" &&\
+    end_base_manager
 
 }
 
@@ -313,16 +328,14 @@ function help_edit_pacman_root(){
 
 function edit_pacman_root (){
       moment=$(date +%Y-%m-%d--%H-%M-%S)
-      btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@commit-root--pre--edit-pacmanroot--$moment &&\
       btrfs filesystem sync $toplevel_dir &&\
 printf "Atualizando bootloader ...
 " &&\
-      arch-chroot $root_dir $update_grub_command 2> /dev/null &&\
+      arch-chroot $transactional_dir $update_grub_command 2> /dev/null &&\
 printf "Entrando em PacmanRoot
 "
-    arch-chroot $root_dir
-	umount -Rv $root_dir &&
-    umount -Rv $toplevel_dir
+    arch-chroot $transactional_dir
+    end_base_manager
 }
 
 ########################################################################################################################
@@ -335,7 +348,7 @@ function terms_user_base_manager(){
       read -p "compreendo e desejo prosseguir (enter para prosseguir, ctrl-c para cancelar):" terms_use
         case $terms_use in
           *)
-            pre_mount_work
+            type_operation_select
             ;;
         esac
         
@@ -373,12 +386,6 @@ function terms_user_base_manager(){
             help_edit_pacman_root
             terms_user_base_manager
                 ;;
-      ################################ entrypoint for garbage collector ###########################################
-      --bootloader-update-no-commit)
-          menu_select=$@
-            pre_mount_work
-                ;;
-      #############################################################################################################
                     *)
         stateless_arch_welcome
         display_functions
