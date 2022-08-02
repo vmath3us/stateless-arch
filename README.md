@@ -1,5 +1,5 @@
 # Stateless Arch <h1>
-
+##iniciando abordagem totalmente transacional
 
 **Esse é um projeto de atualizações contínuas. Se assegure de ter uma cópia recente do repositório antes de testar. As releases são únicamente para marcar a evolução do código, e não devem ser usadas**
 
