@@ -150,7 +150,8 @@ function copy_scripts_to_root(){
 }
 function end_implementation (){
   btrfs su cr $toplevel_dir/$default_sysadmin_data &&
-    if [ $? -eq 0 ] ; then
+      err=$?
+    if [ $err -eq 0 ] ; then
             btrfs filesystem sync $toplevel_dir &&\
             umount -Rv $toplevel_dir &&\
             printf "
@@ -167,17 +168,16 @@ function end_implementation (){
 
             Bem vindo ao Stateles Arch
           
-"           &&
-            exit 0
+" &&
+            exit $err
 
     else
             printf "
               um erro na manipulação dos subvolumes ocorreu, saindo com status de erro.
               Verique suas alterações no cabeçalho do scritp de instalação, ou por colisão entre
             os nomes aqui usados e seus subvolumes já existentes
-"
-            &&
-            exit 1
+" &&
+            exit $err
     fi
 }
 welcome
