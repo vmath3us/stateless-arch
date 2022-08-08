@@ -2,7 +2,7 @@
 
 run_latehook() {
 
-  local sysadmin_state_subvol="@sysadmin_state"
+  local sysadmin_state_subvol="@sysadmin_state"      ########## change here and all scritps in /usr/local/sbin
 
 	local root_mnt="/new_root"
 	
@@ -25,16 +25,13 @@ run_latehook() {
 	local lower_dir_opt="/new_root/opt"
 
 	local lower_dir_srv="/new_root/srv"
-	
-	local real_block_device=$(resolve_device "$root");
+
+    local real_block_device=$(resolve_device "$root");
 
 	local root_overlay_protect=$(mktemp -d -p /)	
 
 
-	mount -t tmpfs tmpfs ${root_overlay_protect} &&
-
-	mount -t overlay -o lowerdir=${root_mnt}:${root_overlay_protect} rootfs ${root_mnt} &&
-
+    btrfs property set -ts ${root_mnt} ro true  && ### set read-only in stateless-arch transactional
 
 
 	local sysadmin_overlay=$(mktemp -d -p /)	
@@ -60,7 +57,7 @@ run_latehook() {
 	mkdir -p ${sysadmin_overlay}/work_opt -v &&
 	mkdir -p ${sysadmin_overlay}/work_srv -v &&
 
-	
+
 	mount -t overlay overlay -o lowerdir=${lower_dir_etc},upperdir=${sysadmin_overlay}/etc,workdir=${sysadmin_overlay}/work_etc,index=off,metacopy=off ${root_mnt}/etc &&	
 	mount -t overlay overlay -o lowerdir=${lower_dir_systemd},upperdir=${sysadmin_overlay}/systemd,workdir=${sysadmin_overlay}/work_systemd,index=off,metacopy=off ${root_mnt}/usr/lib/systemd &&	
 	mount -t overlay overlay -o lowerdir=${lower_dir_var},upperdir=${sysadmin_overlay}/var,workdir=${sysadmin_overlay}/work_var,index=off,metacopy=off  ${root_mnt}/var &&
@@ -68,6 +65,6 @@ run_latehook() {
 	mount -t overlay overlay -o lowerdir=${lower_dir_usrlocal},upperdir=${sysadmin_overlay}/usrlocal,workdir=${sysadmin_overlay}/work_usrlocal,index=off,metacopy=off  ${root_mnt}/usr/local &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_mnt},upperdir=${sysadmin_overlay}/mnt,workdir=${sysadmin_overlay}/work_mnt,index=off,metacopy=off  ${root_mnt}/mnt &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_opt},upperdir=${sysadmin_overlay}/opt,workdir=${sysadmin_overlay}/work_opt,index=off,metacopy=off  ${root_mnt}/opt &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${sysadmin_overlay}/srv,workdir=${sysadmin_overlay}/work_srv,index=off,metacopy=off  ${root_mnt}/srv &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${sysadmin_overlay}/home,workdir=${sysadmin_overlay}/work_home,index=off,metacopy=off  ${root_mnt}/home
+	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${sysadmin_overlay}/srv,workdir=${sysadmin_overlay}/work_srv,index=off,metacopy=off  ${root_mnt}/srv && ####################### remove && to disable home overlay
+    mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${sysadmin_overlay}/home,workdir=${sysadmin_overlay}/work_home,index=off,metacopy=off  ${root_mnt}/home ####################### comment to disable home overlay 
 }
