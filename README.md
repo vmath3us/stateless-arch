@@ -15,14 +15,14 @@ Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLi
 Usando termos de git para se referir ao manuseio do sistema, a comunicação ficará clara.
 Em Stateless-Arch transacional, adicionar e remover programas, bem como quaisquer intervenções no root verdadeiro significa:
 
-* checkout -b transacional main
-* modificar a branch transactional (atualização, instalação e remoção de pacotes, "merge" a partir de outro remoto, os repositórios do ArchLinux no caso)
+1. checkout -b transacional main
+2. modificar a branch transactional (atualização, instalação e remoção de pacotes, "merge" a partir de outro remoto, os repositórios do ArchLinux no caso)
 
-se as modificações forem bem sucedidas, faça 
+3. se as modificações forem bem sucedidas, faça 
 * branch -m main old-main-date-operation
 * branch -m transactional main
 
-se adicionar modificações forem mal sucedidas, faça 
+3. se as modificações forem mal sucedidas, faça 
 * git branch -D transactional
 
 **Assim como num repositório, o processo de merge de novo código (no caso de um sistema, adição/remoção de programas) ser bem sucedido NÃO IMPLICA em um perfeito funcionamento posterior do código em si. Mas usando uma abordagem transacional, o sysadmin sempre terá um root de estado conhecido para o qual voltar (branch -m main broken-main && checkout -b main old-main-date-operation).**
