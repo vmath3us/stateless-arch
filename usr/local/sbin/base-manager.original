@@ -85,15 +85,12 @@ function help_global (){
 update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 transactional_dir=$(mktemp -d -p /tmp)
 toplevel_dir=$(mktemp -d -p /tmp)
-
 function type_operation_select(){
         pre_mount_work
       case $menu_select in
         --bootloader-update)
-        sufix=$menu_select
-        transactional_operation
-        manage_branch
-        bootloader_update && end_base_manager || end_base_manager_error
+        sufix="--bootloader-update"
+        transactional_operation && manage_branch && update_grub || echo "ocorreu um erro na criação/manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" && umount -Rv $toplevel_dir && exit 1
               ;;
         --restore-root)
           restore_root
@@ -102,18 +99,17 @@ function type_operation_select(){
           reset_sysadmin_data
               ;;
         --edit-pacmanroot)
-          edit_pacman_root
+        transactional_operation && edit_pacman_root || echo "ocorreu um erro na criação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" && umount -Rv $toplevel_dir && exit 1
               ;;
    esac
-
-  
 }
 function pre_mount_work(){
 mount $block_device_root $toplevel_dir -o "subvolid="5
 }
 function transactional_operation(){
-    btrfs su snap $toplevel_dir/$default_root $toplevel_dir/@transactional_branch
-      mount $block_device_root $transactional_dir -o "subvol="@transactional_branch
+    btrfs su snap $toplevel_dir/$default_root $toplevel_dir/@transactional_branch &&\
+      mount $block_device_root $transactional_dir -o "subvol="@transactional_branch &&\
+      btrfs filesystem sync $toplevel_dir
 }
 function bind_mount(){
       mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
@@ -133,10 +129,11 @@ function manage_branch(){
     mv $toplevel_dir/$default_root $toplevel_dir/$branch_name &&\
     btrfs filesystem sync $toplevel_dir &&\
     mv $toplevel_dir/@transactional_branch $toplevel_dir/$default_root &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    mount $block_device_root $transactional_dir -o "subvol="$default_root &&\
     btrfs filesystem sync $toplevel_dir
 }
 function bootloader_update(){
-    mount $block_device_root $transactional_dir -o "subvol="$default_root
     bind_mount &&
     arch-chroot $transactional_dir $update_grub_command
 }
@@ -151,7 +148,8 @@ function end_base_manager(){
 }
 function end_base_manager_error(){
     umount -Rv $transactional_dir &&\
-    btrfs su del $toplevel_dir/@transactional_branch &&\
+    btrfs su del $toplevel_dir/$default_root &&\
+    mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&\
     umount -Rv $toplevel_dir &&\
     rmdir $transactional_dir &&\
     rmdir $toplevel_dir
@@ -173,7 +171,15 @@ function help_bootloader_update(){
   "
 
 }
-
+function update_grub(){
+   bootloader_update
+       if [ $? -eq 0 ] ; then
+           end_base_manager
+       else
+           echo "ocorreu um erro na atualização do bootloader na nova branch, a antiga será revertida" &&\
+           end_base_manager_error
+       fi
+}
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -318,12 +324,11 @@ function help_edit_pacman_root(){
 function edit_pacman_root (){
       btrfs filesystem sync $toplevel_dir &&\
         sufix="--edit-pacmanroot"
-        transactional_operation
-        bind_mount
+        bind_mount &&\
 printf "Entrando em PacmanRoot
 "
     arch-chroot $transactional_dir
-    manage_branch && bootloader_update && end_base_manager || end_base_manager_error
+    manage_branch && update_grub || echo "ocorreu um erro na manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" && umount -Rv $transactional_dir && umount -Rv $toplevel_dir && exit 1
 }
 
 ########################################################################################################################
