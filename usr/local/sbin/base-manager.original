@@ -90,7 +90,7 @@ function type_operation_select(){
       case $menu_select in
         --bootloader-update)
         sufix="--bootloader-update"
-        transactional_operation && manage_branch && update_grub || echo "ocorreu um erro na criação/manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" && umount -Rv $toplevel_dir && exit 1
+        transactional_operation && manage_branch && update_grub || echo "ocorreu um erro na criação/manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro"
               ;;
         --restore-root)
           restore_root
@@ -124,7 +124,7 @@ function bind_mount(){
 }
 function manage_branch(){
     moment=$(date +%Y-%m-%d--%H-%M-%S)
-    branch_name="@branch-root$sufix--$moment"
+    branch_name="@branch-root-pre$sufix--$moment"
     umount -Rv $transactional_dir &&\
     mv $toplevel_dir/$default_root $toplevel_dir/$branch_name &&\
     btrfs filesystem sync $toplevel_dir &&\
@@ -140,8 +140,8 @@ function bootloader_update(){
 function end_base_manager(){
 	btrfs filesystem sync $toplevel_dir &&\
 	execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
-    	btrfs filesystem sync $toplevel_dir &&\
-    	umount -Rv $transactional_dir &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    umount -Rv $transactional_dir &&\
 	umount -Rv $toplevel_dir &&
 	rmdir $transactional_dir &&
 	rmdir $toplevel_dir
@@ -330,7 +330,7 @@ printf "Entrando em PacmanRoot
     exiting_edit_pacman_root
 }
 function exiting_edit_pacman_root(){
-    manage_branch && 
+    manage_branch &&
 	if [ $? -eq 0 ] ; then
 		    update_grub
 	else
@@ -368,6 +368,10 @@ function terms_user_base_manager(){
             stateless_arch_welcome
             help_bootloader_update
             terms_user_base_manager
+                ;;
+	--bootloader-update-pos-garbage)   ####################### entrypoint for garbage-collector
+          menu_select="--bootloader-update"
+            type_operation_select
                 ;;
       --restore-root)
           menu_select=$@
