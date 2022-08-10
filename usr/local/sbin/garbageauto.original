@@ -3,25 +3,25 @@
 function garbage_config(){
     block_device_root="name_block_device_here"
     declare parameter
-        parameter[1]="commit-root"
-        parameter[2]="commit-home"  ### example sufix name to home subvol snapshots, case sensitive
-        parameter[3]="commit-sysadmin-state" ### example sufix name to sysadmin subvol snapshots, case sensitive
-        ##parameter[4]="sufix-name-commit"
-    declare preserve        ##### set preserve most recent commits number, per parameter, into quotes
+        parameter[1]="branch-root"
+        parameter[2]="branch-home"  ### example sufix name to home subvol snapshots, case sensitive
+        parameter[3]="branch-sysadmin-state" ### example sufix name to sysadmin subvol snapshots, case sensitive
+        ##parameter[4]="sufix-name-branch"
+    declare preserve        ##### set preserve most recent branchs number, per parameter, into quotes
         preserve[1]="3"
         preserve[2]="5"                    #   if equal 0, ALL subvols in parameter as deleted 
         preserve[3]="7"
         ##parameter[4]="325"
-    ## to preserve subvols common sufix, example clear old commit-root, but not old commit-root--pre. Case sensitive, insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
+    ## to preserve subvols common sufix, example clear old branch-root, but not old branch-root--pre. Case sensitive, insert new shield into quotes, after new pipe, example "pre|pos|created|int|before|after". comment to disable shield
     declare shield
         shield[1]="pre|pos|created|int"                                     # shield to parameter[1]
         shield[2]="another|parameter|here"                                  # shield to parameter[2]
         shield[3]="Case|sensiTive"                                          # shield to parameter[3]
         ##shield[4]="insert|shield|parameter|here"   # DISABLED SHIELD
-    commit_garbage
+    branch_garbage
 }
-function commit_garbage(){
-        ##touch /var/log/garbagecommit.log               create, if no existing, logfile to garbage
+function branch_garbage(){
+        ##touch /var/log/garbagebranch.log               create, if no existing, logfile to garbage
         toplevel_dir=$(mktemp -d -p /tmp)
         mount $block_device_root $toplevel_dir
     for operator in ${!parameter[@]} ; do
@@ -34,16 +34,16 @@ function commit_garbage(){
         totalcandidate=${#subvol[@]}
         controller=${preserve[$operator]}
         array_position=0
-	    echo "start clear old ${parameter[$operator]} in $moment"  ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
+	    echo "start clear old ${parameter[$operator]} in $moment"  ### suggestion: redirect to logfile, example >> /var/log/garbagebranch.log
         	    while [ $totalcandidate -gt $controller ] ; do
-                        btrfs su del -i ${subvol[$array_position]} $toplevel_dir ## >> /var/log/garbagecommit.log
+                        btrfs su del -i ${subvol[$array_position]} $toplevel_dir ## >> /var/log/garbagebranch.log
                         btrfs filesystem sync $toplevel_dir
                             let --totalcandidate
                             let ++array_position
         	    done
-	    echo " end clear old ${parameter[$operator]} started in $moment" ### suggestion: redirect to logfile, example >> /var/log/garbagecommit.log
+	    echo " end clear old ${parameter[$operator]} started in $moment" ### suggestion: redirect to logfile, example >> /var/log/garbagebranch.log
     done
         umount -R $toplevel_dir
-        base-manager --bootloader-update-no-commit                  ### special entrypoint for garbage collectors in base-manager
+        base-manager --bootloader-update-pos-garbage                  ### special entrypoint for garbage collectors in base-manager
 }
 garbage_config
