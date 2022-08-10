@@ -8,7 +8,7 @@
 ########################################################################################################################
 ########################################################################################################################
 
-block_device_root="/dev/sda3"
+block_device_root="name_block_device_here"
 default_root="@base_system"
 
 ########################################################################################################################
@@ -99,7 +99,7 @@ function type_operation_select(){
           reset_sysadmin_data
               ;;
         --edit-pacmanroot)
-        transactional_operation && edit_pacman_root || echo "ocorreu um erro na criação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" && umount -Rv $toplevel_dir && exit 1
+        transactional_operation && edit_pacman_root
               ;;
    esac
 }
@@ -138,21 +138,20 @@ function bootloader_update(){
     arch-chroot $transactional_dir $update_grub_command
 }
 function end_base_manager(){
-    umount -Rv $transactional_dir &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    umount -Rv $toplevel_dir &&\
-    rmdir $transactional_dir &&\
-    rmdir $toplevel_dir
+	btrfs filesystem sync $toplevel_dir &&\
+	execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
+    	btrfs filesystem sync $toplevel_dir &&\
+    	umount -Rv $transactional_dir &&\
+	umount -Rv $toplevel_dir &&
+	rmdir $transactional_dir &&
+	rmdir $toplevel_dir
 }
 function end_base_manager_error(){
     umount -Rv $transactional_dir &&\
     btrfs su del $toplevel_dir/$default_root &&\
     mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&\
     umount -Rv $toplevel_dir &&\
-    rmdir $transactional_dir &&\
-    rmdir $toplevel_dir
+    rmdir $transactional_dir && rmdir $toplevel_dir
 }
 
 ########################################################################################################################
@@ -328,7 +327,18 @@ function edit_pacman_root (){
 printf "Entrando em PacmanRoot
 "
     arch-chroot $transactional_dir
-    manage_branch && update_grub || echo "ocorreu um erro na manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" && umount -Rv $transactional_dir && umount -Rv $toplevel_dir && exit 1
+    exiting_edit_pacman_root
+}
+function exiting_edit_pacman_root(){
+    manage_branch && 
+	if [ $? -eq 0 ] ; then
+		    update_grub
+	else
+	     echo "ocorreu um erro na manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" &&\
+		     umount -Rv transaction_dir &&\
+		     umount -Rv toplevel_dir &&\
+		     exit 1
+	fi
 }
 
 ########################################################################################################################
