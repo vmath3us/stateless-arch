@@ -194,7 +194,7 @@ function end_base_manager_error(){
         exiting="failed" &&
         critical_error_exiting
     fi
-
+}
 function transactional_failed_exiting(){
     moment=$(date +%Y-%m-%d--%H-%M-%S)
     umount -Rv $transactional_dir &&\
