@@ -187,7 +187,7 @@ function end_base_manager_error(){
             exiting="failed"
             array_to_restore=($(btrfs su show /)) &&
             id_to_restore=${array_to_restore[18]} &&
-            echo "houve um erro transacional, tentando recuperar..." &&
+            echo "houve um erro transacional, tentando recuperar, tornando o / atual como branch main..." &&
             restore_root_p2 &&
             end_base_manager || critical_error_exiting
     elif [ $status == "op2" ] ; then
