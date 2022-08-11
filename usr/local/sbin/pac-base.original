@@ -1,5 +1,5 @@
 #!/bin/bash
-block_device_root="/dev/sda3"
+block_device_root="name_block_device_here"
 default_root="@base_system"
 update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 transactional_dir=$(mktemp -d -p /tmp)
