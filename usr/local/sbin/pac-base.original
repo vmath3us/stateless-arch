@@ -65,13 +65,18 @@ function bootloader_update(){
     arch-chroot $transactional_dir $update_grub_command
 }
 function end_base_manager(){
-	btrfs filesystem sync $toplevel_dir &&\
-	execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
+    if [ -d $toplevel_dir/$default_root ] ; then
+	    btrfs filesystem sync $toplevel_dir &&\
+	    execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
     	btrfs filesystem sync $toplevel_dir &&\
     	umount -Rv $transactional_dir &&\
-	umount -Rv $toplevel_dir &&
-	rmdir $transactional_dir &&
-	rmdir $toplevel_dir
+	    umount -Rv $toplevel_dir &&
+	    rmdir $transactional_dir &&
+	    rmdir $toplevel_dir
+    else
+        status="broken" &&
+        manage_branch_error
+    fi
 }
 function end_base_manager_error(){
     umount -Rv $transactional_dir &&\
