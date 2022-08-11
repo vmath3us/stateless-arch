@@ -1,17 +1,19 @@
 #!/bin/bash
-toplevel_dir=$(mktemp -d -p /tmp)
-transactional_dir=$(mktemp -d -p /tmp)
+block_device_root="/dev/sda3"
 default_root="@base_system"
-block_device_root="name_block_device_here"
 update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
+transactional_dir=$(mktemp -d -p /tmp)
+toplevel_dir=$(mktemp -d -p /tmp)
 
+function pre_mount_work(){
+mount $block_device_root $toplevel_dir -o "subvolid="5
+}
 function transactional_operation(){
-moment=$(date +%Y-%m-%d--%H-%M-%S)
-commit_name="@commit-root--$moment"
-      mount $block_device_root $toplevel_dir -o "subvolid="5 &&\
-    mv $toplevel_dir/$default_root $toplevel_dir/$commit_name &&\
-    btrfs su snap $toplevel_dir/$commit_name $toplevel_dir/$default_root
-      mount $block_device_root $transactional_dir -o "subvol="$default_root
+    btrfs su snap $toplevel_dir/$default_root $toplevel_dir/@transactional_branch &&\
+      mount $block_device_root $transactional_dir -o "subvol="@transactional_branch &&\
+      btrfs filesystem sync $toplevel_dir
+}
+function bind_mount(){
       mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
       mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
       mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
@@ -22,37 +24,106 @@ commit_name="@commit-root--$moment"
       mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
       mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
 }
-function end_base_manager(){
+function manage_branch(){
+    manage_branch_1
+}
+function manage_branch_1(){
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
+    branch_name="@branch-root-pre-pacman--$moment"
     umount -Rv $transactional_dir &&\
-    execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
-    umount -Rv $toplevel_dir &&\
-    rmdir $transactional_dir &&\
-    rmdir $toplevel_dir
+    mv $toplevel_dir/$default_root $toplevel_dir/$branch_name &&\
+    status="rootmoved" &&\
+    manage_branch_error || manage_branch_error
+    }
+function manage_branch_2(){
+    btrfs filesystem sync $toplevel_dir &&\
+    mv $toplevel_dir/@transactional_branch $toplevel_dir/$default_root &&\
+    status="transactionalmoved" &&\
+    manage_branch_error || manage_branch_error
+}
+function manage_branch_3(){
+    btrfs filesystem sync $toplevel_dir &&\
+    mount $block_device_root $transactional_dir -o "subvol="$default_root &&
+    status="newrootmount" &&\
+    manage_branch_error || manage_branch_error
+}
+function manage_branch_error(){
+    if [ $status == "rootmoved"] ; then
+        status="none"
+        manage_branch_2
+    elif [ $status == "transactionalmoved"]
+        status="none"
+        manage_branch_3
+    elif [ $status == "newrootmount"]
+        exit 0
+    else
+        echo "ocorreu um erro transacional. Abortando imediatamente. Confira manualmente o estado do sistema de arquivos e a lista de subvolumes. Se não houver nenhum chamado $default_root, o próximo boot falhará. O código de erro foi $err" && exit 1
+    fi
+}
+function bootloader_update(){
+    bind_mount &&
+    arch-chroot $transactional_dir $update_grub_command
+}
+function end_base_manager(){
+	btrfs filesystem sync $toplevel_dir &&\
+	execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
+    	btrfs filesystem sync $toplevel_dir &&\
+    	umount -Rv $transactional_dir &&\
+	umount -Rv $toplevel_dir &&
+	rmdir $transactional_dir &&
+	rmdir $toplevel_dir
 }
 function end_base_manager_error(){
     umount -Rv $transactional_dir &&\
-    btrfs su del $toplevel_dir/$default_root &&\
-    mv $toplevel_dir/$commit_name $toplevel_dir/$default_root &&\
+    umount -Rv $toplevel_dir &&\
+    rmdir $transactional_dir && rmdir $toplevel_dir
+}
+function update_grub(){
+   bootloader_update
+       if [ $? -eq 0 ] ; then
+           end_base_manager
+       else
+           echo "a atualização do bootloader na nova branch saiu com status de erro, revertendo transação" && update_grub_error
+       fi
+}
+function update_grub_error(){
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
+    umount -Rv $transactional_dir &&\
+    mv $toplevel_dir/$default_root $toplevel_dir/@broken-bootloader-pos-pacman-$moment &&\
+    mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&\
     umount -Rv $toplevel_dir &&\
     rmdir $transactional_dir &&\
-    rmdir $toplevel_dir
+    rmdir $toplevel_dir &&\
+    echo "transação revertida"
 }
-function bootloader_update(){
- echo "entrando em ambiente chroot" &&\
-  arch-chroot $transactional_dir $update_grub_command
+
+function decision_pac(){
+    	if [ $err -eq 0 ] ; then
+		exit_pac_base_sucess
+	else
+		umount -Rv $transactional_dir &&\
+		btrfs su del $toplevel_dir/@transactional_branch &&\
+		umount -Rv $toplevel_dir &&\
+		rmdir $transactional_dir &&\
+		rmdir $toplevel_dir &&\
+		exit $err
+	fi
 }
-function pacman_transactional (){
-        transactional_operation
-      btrfs filesystem sync $toplevel_dir &&\
-printf "Entrando em PacmanRoot
-"
+function exit_pac_base_sucess(){
+    manage_branch && 
+	if [ $? -eq 0 ] ; then
+    update_grub
+	else
+        exit 1
+	fi
+}
+function run_pac_base (){
+	pre_mount_work
+	transactional_operation
+    bind_mount
     arch-chroot $transactional_dir pacman $command_pacman
     err=$?
-    	if [ $err -eq 0 ] ; then
-    	bootloader_update && end_base_manager || end_base_manager_error
-	else
-       	end_base_manager_error
-	fi	
+    decision_pac
 }
 command_pacman=$@
-pacman_transactional
+run_pac_base
