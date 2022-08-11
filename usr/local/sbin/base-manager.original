@@ -185,19 +185,18 @@ function end_base_manager(){
 function end_base_manager_error(){
     if [ $status == "op1" ] || [ ! -d $toplevel_dir/$default_root ] || [ $reason == "posgrub" ] ; then
             exiting="failed"
-            $array_to_restore=($(btrfs su show /)) &&
-            $id_to_restore=${array_to_restore[18]} &&
+            array_to_restore=($(btrfs su show /)) &&
+            id_to_restore=${array_to_restore[18]} &&
             echo "houve um erro transacional, tentando recuperar..." &&
             restore_root_p2 &&
-            exiting="sucess" &&
-            critical_error_exiting ||
-            critical_error_exiting
+            end_base_manager || critical_error_exiting
     elif [ $status == "op2" ] ; then
         exiting="failed" &&
         transactional_failed_exiting  
-    else [ $status == "op3" ] ; then
-        exiting="failed" &&
-        critical_error_exiting
+   elif [ $status == "op3" ] ; then
+        exiting="failed" && critical_error_exiting
+else
+        exiting="failed" && critical_error_exiting
     fi
 }
 function transactional_failed_exiting(){
@@ -297,13 +296,16 @@ function restore_root_p2(){
     restore_root_p3
 }
 function restore_root_p3(){
-    if [ -d $toplevel_dir/$default_root ] ; then
+    if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ]; then
     mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
     btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
     end_base_manager
-    else
-    btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
-    end_base_manager
+    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "posgrub" ]; then
+    mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
+    btrfs su snap -r $restore_dir $toplevel_dir/$default_root
+else
+  btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
+  end_base_manager
     fi
 }
 
