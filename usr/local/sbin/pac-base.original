@@ -36,26 +36,26 @@ function manage_branch_1(){
     manage_branch_error || manage_branch_error
     }
 function manage_branch_2(){
+    status="none"
     btrfs filesystem sync $toplevel_dir &&\
     mv $toplevel_dir/@transactional_branch $toplevel_dir/$default_root &&\
     status="transactionalmoved" &&\
     manage_branch_error || manage_branch_error
 }
 function manage_branch_3(){
+    status="none" &&\
     btrfs filesystem sync $toplevel_dir &&\
     mount $block_device_root $transactional_dir -o "subvol="$default_root &&
     status="newrootmount" &&\
     manage_branch_error || manage_branch_error
 }
 function manage_branch_error(){
-    if [ $status == "rootmoved"] ; then
-        status="none"
+    if [ $status == "rootmoved" ] ; then
         manage_branch_2
-    elif [ $status == "transactionalmoved"]
-        status="none"
+    elif [ $status == "transactionalmoved" ] ; then
         manage_branch_3
-    elif [ $status == "newrootmount"]
-        exit 0
+    elif [ $status == "newrootmount" ] ; then
+        status="newrootmount"
     else
         echo "ocorreu um erro transacional. Abortando imediatamente. Confira manualmente o estado do sistema de arquivos e a lista de subvolumes. Se não houver nenhum chamado $default_root, o próximo boot falhará. O código de erro foi $err" && exit 1
     fi
@@ -106,12 +106,12 @@ function decision_pac(){
 		umount -Rv $toplevel_dir &&\
 		rmdir $transactional_dir &&\
 		rmdir $toplevel_dir &&\
-		exit $err
+        echo "transação abortada pelo usuário"
 	fi
 }
 function exit_pac_base_sucess(){
     manage_branch && 
-	if [ $? -eq 0 ] ; then
+	if [ $status == "newrootmount" ] ; then
     update_grub
 	else
         exit 1
