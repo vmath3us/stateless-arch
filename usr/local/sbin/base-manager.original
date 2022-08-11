@@ -90,7 +90,7 @@ function type_operation_select(){
       case $menu_select in
         --bootloader-update)
         sufix="--bootloader-update"
-        transactional_operation && manage_branch && update_grub || echo "ocorreu um erro na criação/manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro"
+        transactional_operation && manage_branch && update_grub || echo "confira o dmesg por erros no sistema de arquivos, houve um erro transacional."
               ;;
         --restore-root)
           restore_root
@@ -108,8 +108,7 @@ mount $block_device_root $toplevel_dir -o "subvolid="5
 }
 function transactional_operation(){
     btrfs su snap $toplevel_dir/$default_root $toplevel_dir/@transactional_branch &&\
-      mount $block_device_root $transactional_dir -o "subvol="@transactional_branch &&\
-      btrfs filesystem sync $toplevel_dir
+      mount $block_device_root $transactional_dir -o "subvol="@transactional_branch
 }
 function bind_mount(){
       mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
@@ -122,20 +121,51 @@ function bind_mount(){
       mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
       mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
 }
-function manage_branch(){
-    moment=$(date +%Y-%m-%d--%H-%M-%S)
-    branch_name="@branch-root-pre$sufix--$moment"
-    umount -Rv $transactional_dir &&\
-    mv $toplevel_dir/$default_root $toplevel_dir/$branch_name &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    mv $toplevel_dir/@transactional_branch $toplevel_dir/$default_root &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    mount $block_device_root $transactional_dir -o "subvol="$default_root &&\
-    btrfs filesystem sync $toplevel_dir
-}
 function bootloader_update(){
     bind_mount &&
     arch-chroot $transactional_dir $update_grub_command
+}
+
+function manage_branch(){
+    manage_branch_1
+}
+function manage_branch_1(){
+    status="op1"
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
+    branch_name="@branch-root-pre$sufix--$moment"
+    btrfs filesystem sync $toplevel_dir &&\
+    umount -Rv $transactional_dir &&\
+    mv $toplevel_dir/$default_root $toplevel_dir/$branch_name &&\
+    status="rootmoved" &&\
+    manage_branch_error || manage_branch_error
+    }
+function manage_branch_2(){
+    status="op2"
+    btrfs filesystem sync $toplevel_dir &&\
+    mv $toplevel_dir/@transactional_branch $toplevel_dir/$default_root &&\
+    status="transactionalmoved" &&\
+    manage_branch_error || manage_branch_error
+}
+function manage_branch_3(){
+    status="op3" &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    mount $block_device_root $transactional_dir -o "subvol="$default_root &&
+    status="newrootmount" &&\
+    manage_branch_error || manage_branch_error
+}
+function manage_branch_error(){
+    if [ $status == "rootmoved" ] ; then
+        manage_branch_2
+    elif [ $status == "transactionalmoved" ] ; then
+        manage_branch_3
+    elif [ $status == "newrootmount" ] ; then
+        status="newrootmount"
+    elif [ $status == "op1" ] || [ $status == "op2" ] || [ $status == "op3" ] ; then
+        echo "ocorreu um erro transacional. Tentando recuperar. Ao fim, confira manualmente o estado do sistema de arquivos e a lista de subvolumes. Se não houver nenhum chamado $default_root, o próximo boot falhará. Use btrfs su l / | grep $default_root" && end_base_manager_error
+    else
+        exiting="broken" && 
+        critical_error_exiting
+    fi
 }
 function end_base_manager(){
 	btrfs filesystem sync $toplevel_dir &&\
@@ -144,16 +174,52 @@ function end_base_manager(){
     umount -Rv $transactional_dir &&\
 	umount -Rv $toplevel_dir &&
 	rmdir $transactional_dir &&
-	rmdir $toplevel_dir
+	rmdir $toplevel_dir &&
+    echo "transação concluída"
 }
 function end_base_manager_error(){
-    umount -Rv $transactional_dir &&\
-    btrfs su del $toplevel_dir/$default_root &&\
-    mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&\
-    umount -Rv $toplevel_dir &&\
-    rmdir $transactional_dir && rmdir $toplevel_dir
-}
+    if [ $status == "op1" ] || [ ! -d $toplevel_dir/$default_root ] || [ $reason == "posgrub" ] ; then
+            exiting="failed"
+            $array_to_restore=($(btrfs su show /)) &&
+            $id_to_restore=${array_to_restore[18]} &&
+            echo "houve um erro transacional, tentando recuperar..." &&
+            restore_root_p2 &&
+            exiting="sucess" &&
+            critical_error_exiting ||
+            critical_error_exiting
+    elif [ $status == "op2" ] ; then
+        exiting="failed" &&
+        transactional_failed_exiting  
+    else [ $status == "op3" ] ; then
+        exiting="failed" &&
+        critical_error_exiting
+    fi
 
+function transactional_failed_exiting(){
+    moment=$(date +%Y-%m-%d--%H-%M-%S)
+    umount -Rv $transactional_dir &&\
+    btrfs su del $toplevel_dir/@transactional_branch &&\
+    mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&
+    exiting="sucefull" &&
+    critical_error_exiting || critical_error_exiting
+}
+function critical_error_exiting(){
+    if [ $exiting == "sucefull" ] ; then
+        btrfs filesystem sync $toplevel_dir &&\
+        umount -Rv $toplevel_dir &&\
+        rmdir $transactional_dir &&\
+        rmdir $toplevel_dir &&\
+        echo "houve uma tentativa de reversão devido a um erro anterior, confira se existe na sua lista de subvolumes um chamado $default_root. Caso não exista, o próximo boot falhará, e caírá no grub-rescue shell. Use base-manager --restore-root imediatamente caso não exista $default_root. Confira usando btrfs su l / | grep $default_root" && exit 1
+    elif [ $exiting == "failed" ] ; then
+        btrfs filesystem sync $toplevel_dir &&\
+        umount -Rv $toplevel_dir &&\
+        rmdir $transactional_dir &&\
+        rmdir $toplevel_dir &&\
+        echo "houve um erro irrecuperável por esse scritp, confira se existe na sua lista de subvolumes um chamado $default_root. Caso não exista, o próximo boot falhará, e caírá no grub-rescue shell. Use base-manager --restore-root imediatamente caso não exista $default_root. Confira usando btrfs su l / | grep $default_root . Verifique também a saúde do sistema de arquivos a partir do dmesg" && exit 1
+    else
+        echo "o sistema de arquivos está possivelmente inconsistente, abortando todas as operações e saindo" && exit 1
+    fi
+}
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -168,17 +234,17 @@ function help_bootloader_update(){
   e usar base-manager --bootloader-update também FORA de --edit-pacmanroot.
   Pode ser usado após --restore-root
   "
-
 }
 function update_grub(){
    bootloader_update
        if [ $? -eq 0 ] ; then
            end_base_manager
        else
-           echo "ocorreu um erro na atualização do bootloader na nova branch, a antiga será revertida" &&\
-           end_base_manager_error
+           reason="posgrub"
+           echo "a atualização do bootloader na nova branch saiu com status de erro, tentando reverter transação" && end_base_manager_error
        fi
 }
+
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -224,9 +290,17 @@ function restore_root_p2(){
     restore_dir=$(mktemp -d -p /tmp)
     moment=$(date +%Y-%m-%d--%H-%M-%S)
     mount $block_device_root -o "subvolid="$id_to_restore $restore_dir &&
+    restore_root_p3
+}
+function restore_root_p3(){
+    if [ -d $toplevel_dir/$default_root ] ; then
     mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
     btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
     end_base_manager
+    else
+    btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
+    end_base_manager
+    fi
 }
 
 ########################################################################################################################
@@ -333,11 +407,6 @@ function exiting_edit_pacman_root(){
     manage_branch &&
 	if [ $? -eq 0 ] ; then
 		    update_grub
-	else
-	     echo "ocorreu um erro na manipulação da branch transacional, confira o sistema de arquivos. Abortando transação e saindo com status de erro" &&\
-		     umount -Rv transaction_dir &&\
-		     umount -Rv toplevel_dir &&\
-		     exit 1
 	fi
 }
 
