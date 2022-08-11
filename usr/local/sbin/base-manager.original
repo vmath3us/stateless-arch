@@ -168,14 +168,19 @@ function manage_branch_error(){
     fi
 }
 function end_base_manager(){
-	btrfs filesystem sync $toplevel_dir &&\
-	execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
-    btrfs filesystem sync $toplevel_dir &&\
-    umount -Rv $transactional_dir &&\
-	umount -Rv $toplevel_dir &&
-	rmdir $transactional_dir &&
-	rmdir $toplevel_dir &&
-    echo "transação concluída"
+    if [ -d $toplevel_dir/$default_root ] ; then
+        btrfs filesystem sync $toplevel_dir &&\
+        execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
+        btrfs filesystem sync $toplevel_dir &&\
+        umount -Rv $transactional_dir &&\
+        umount -Rv $toplevel_dir &&
+        rmdir $transactional_dir &&
+        rmdir $toplevel_dir &&
+        echo "transação concluída"
+    else
+        exiting="failed" &&\
+        critical_error_exiting
+    fi
 }
 function end_base_manager_error(){
     if [ $status == "op1" ] || [ ! -d $toplevel_dir/$default_root ] || [ $reason == "posgrub" ] ; then
@@ -196,7 +201,6 @@ function end_base_manager_error(){
     fi
 }
 function transactional_failed_exiting(){
-    moment=$(date +%Y-%m-%d--%H-%M-%S)
     umount -Rv $transactional_dir &&\
     btrfs su del $toplevel_dir/@transactional_branch &&\
     mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&
@@ -204,7 +208,7 @@ function transactional_failed_exiting(){
     critical_error_exiting || critical_error_exiting
 }
 function critical_error_exiting(){
-    if [ $exiting == "sucefull" ] ; then
+    if [ $exiting == "sucefull" ] && [ -d $toplevel_dir/$default_root ] ; then
         btrfs filesystem sync $toplevel_dir &&\
         umount -Rv $toplevel_dir &&\
         rmdir $transactional_dir &&\
