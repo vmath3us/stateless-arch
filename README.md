@@ -30,13 +30,13 @@ Em Stateless-Arch transacional, adicionar e remover programas, bem como quaisque
 # Implementação <h2>
 
 implementar Stateless Arch em uma instalação nova é simples como:
-
+branch backup-master
 * pacstrap -c em um único subvolume btrfs (/boot incluso). Deve constar nos pacotes, arch-install-scripts grub grub-btrfs bash e git (-c para não incluir na base a cache do pacstrap);
 * arch-chroot no subvolume;
 * passwd;
 * gerar locales;
 * git clone desse repositório(pode ser em /tmp);
-* trocar para a branch transactional-arch
+* trocar para a branch transactional-archbranch backup-master
 * executar o scritp install-stateless-arch-tools.sh
 * seguir as instruções finais do scritp (somente operações normais em qualquer instalação do ArchLinux)
 * reiniciar
@@ -46,19 +46,19 @@ implementar Stateless Arch em uma instalação nova é simples como:
 # Arquitetura <h3>
 
 Ao concluir o boot, a raiz consistirá em duas camadas, sendo:
-
+branch backup-master
 **Primeira camada: PacmanRoot**: um subvolume btrfs, com permissão somente leitura, onde está instalado o ArchLinux, com todas as pastas do root, **incluindo** /boot (obviamente /boot/efi será um ponto de montagem para fat32 EFI durante a instalação da grub, se efi). Esse root pode inicialmente possuir configurações mínimas, somente senha root, locales, e os arquivos e modificações necessárias para que Stateless Arch funcione. O próprio fstab não precisa ficar aqui, sua edição durante a instalação do sistema pode ser ignorada. Em todo boot de uma instalação com Stateless-Arch transacional, o PacmanRoot terá sua permissão de escrita trocada para false.
 
 
 **Segunda camada: Sysadmin** um subvolume btrfs com permissão de leitura e escrita, que conterá diretórios para permitir montagem overlay com permissão de escrita em /etc/, /var, /root, /mnt, /home, /opt, /srv, /usr/local/ e /usr/lib/systemd, acima da camada somente leitura anterior. Assim, configurações de serviços, montagem, udev e afins podem ser honradas apropriadamente pelo systemd, na fase 2 da inicialização, e scripts customizados relacionados á suspensão e desligamento podem ser criados livremente (IMPORTANTE= alterar atributos dos binários sobre o overlay, após o sistema devidamente iniciado, ainda que não afete os arquivos reais, pode causar problemas na inicialização seguinte; esse overlay em específico (/usr/lib/systemd/) deve ser usado somente nos casos acima mencionados, adicionar scripts e serviços associados a suspensão e desligamento do sistema.). O subvolume que abriga os overlays tem o nome e o tipo de compressão explicitamente declarados no init; renomear o subvolume sem mudá-lo em /usr/lib/initcpio/hooks/stateless-mode-boot e reconstruir o init implica em um boot quebrado. Esse subvolume retem o estado do sistema, e pode ser simplesmente descartado (ou renomeado). **Desde que um novo seja criado**, no boot seguinte o scritp no initrd se encarregará de criar os diretórios necessários para essa camada. O sistema iniciará então no branch mais recente de PacmanRoot, mas sem as configurações do sysadmin. Um usuário com experiência mínima em btrfs pode fazer essa operação manualmente de forma trivial, mas isso não é necessário: base-manager --reset-sysadmin-data intermedia essa operação de forma simples.
-
+branch backup-master
 **ATENÇÃO: conforme explicado no script de implementação, o hook que torna isso possível deve ser o último em HOOKS no /etc/mkinitcpio.conf, é compatível com os hooks ativos por padrão no ArchLinux, e NÃO é compatível com os hooks grub-btrfs-overlayfs e systemd; a combinação com outros hooks não foi testada**
 
 # Sobre pontos de montagem e serviços <h4>
 
 Quaisquer pontos de montagem declarados no /etc/fstab do overlay, bem como serviços de /etc/systemd/system serão honrados normalmente a princípio, mas quando se trata de subvolumes do mesmo dispositivo de bloco, há uma limitação: como a raiz do sistema é um subvolume somente leitura, e não é desmontada e remontada pelo systemd para honrar uma entrada no fstab (que sequer precisa existir), todos os demais subvolumes do mesmo dispositivo de bloco seguem essa mesma montagem, ou seja, sem compressão, ainda que declarada corretamente no fstab. Uma operação de remount corrige isso, portanto acrescentei nessa ferramenta um serviço do systemd que fará tal operação no início do sistema. **O serviço precisa ser ativado.**
 
-**É uma boa prática existir uma montagem verdadeira para /home/$USER no fstab do sysadmin**, que será montada sobre o overlay de /home. Ferramentas de gerenciamento de container (docker/podman) não funcionam corretamente quando seu armazenamento é um overlay. Crie um subvolume/partição para a home de cada usuário da máquina, e os coloque corretamente no fstab. O mesmo pode ser verdade (não testado) para bancos de dados e imagens de máquinas virtuais nos diretórios aninhados em /var. Se usa algumas dessas coisas no dia a dia, e precisa que fiquem na hierarquia de /var, tenha partições e subvolumes verdadeiros para montar apropriadamente. Enfim, teste suas montagens antes de migrar totalmente para Stateless Arch, e verifique se quaisquer inconsistências encontradas podem ser resolvidas criando um ponto de montagem dedicado.
+**É uma boa prática branch backup-masterexistir uma montagem verdadeira para /home/$USER no fstab do sysadmin**, que será montada sobre o overlay de /home. Ferramentas de gerenciamento de container (docker/podman) não funcionam corretamente quando seu armazenamento é um overlay. Crie um subvolume/partição para a home de cada usuário da máquina, e os coloque corretamente no fstab. O mesmo pode ser verdade (não testado) para bancos de dados e imagens de máquinas virtuais nos diretórios aninhados em /var. Se usa algumas dessas coisas no dia a dia, e precisa que fiquem na hierarquia de /var, tenha partições e subvolumes verdadeiros para montar apropriadamente. Enfim, teste suas montagens antes de migrar totalmente para Stateless Arch, e verifique se quaisquer inconsistências encontradas podem ser resolvidas criando um ponto de montagem dedicado.
 
 
 # Usabilidade <h6>
@@ -67,7 +67,7 @@ Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver co
 
 * atualização e remoção de pacotes somente de forma mediada por pac-base, não diretamento pelo pacman(discutido a seguir), e precisando reiniciar para ter acesso às modificações;
 
-* como já deu para perceber, grub como bootloader é uma exigencia aqui. Faço isso para poder incluir o próprio kernel nos branchs. Dado que a grub consegue lidar com kernel e initrd sob btrfs, comprimido ou não, seja em legacy ou em efi, se torna uma ferramenta com um fator social e até mesmo ambiental importante : hardware sem capacidade de boot efi continua sendo suportado, e ao ter toda a raiz inclusa em branchs, a recuperação de uma atualização problemática, ou mesmo um reset total não passa por mais carga de acesso aos repositórios para baixar iso e pacotes. Mesmo implementar o ArchLinux em outra máquina se torna fácil como um btrfs send via ssh de seu último branch, com a certeza que isso não incluirá chaves ssh,configurações de sysadmins e grupos, pontos de acesso wifi, ou outras configurações sensíveis. PacmanRoot está sempre em "estado de pacstrap", ou muito perto disso. 
+* como já deu para pbranch backup-mastererceber, grub como bootloader é uma exigencia aqui. Faço isso para poder incluir o próprio kernel nos branchs. Dado que a grub consegue lidar com kernel e initrd sob btrfs, comprimido ou não, seja em legacy ou em efi, se torna uma ferramenta com um fator social e até mesmo ambiental importante : hardware sem capacidade de boot efi continua sendo suportado, e ao ter toda a raiz inclusa em branchs, a recuperação de uma atualização problemática, ou mesmo um reset total não passa por mais carga de acesso aos repositórios para baixar iso e pacotes. Mesmo implementar o ArchLinux em outra máquina se torna fácil como um btrfs send via ssh de seu último branch, com a certeza que isso não incluirá chaves ssh,configurações de sysadmins e grupos, pontos de acesso wifi, ou outras configurações sensíveis. PacmanRoot está sempre em "estado de pacstrap", ou muito perto disso. 
 
 
 * a geração de locale-gen deve ser incluída diretamente na raiz, como já citado no processo de implementação, o que pode ser inconveniente caso o sysadmin troque constantemente de idioma; editar a raiz diretamente será discutido a seguir. Uma alternativa pode ser, durante a instalação do sistema, antes de implementar Stateless Arch, descomentar todos os locales em /etc/locale.gen, e gerar todos.
@@ -89,6 +89,8 @@ Será papel do sysadmin implementar quaisquer políticas que queira de garbage c
 Base-manager --restore-root provê uma forma simples de tornar qualquer dos branchs disponíveis em PacmanRoot a partir do boot seguinte; é uma operação não destrutiva, as branchs são somente duplicadas e renomeadas.
 
 Com base-manager --edit-pacmanroot, um branch transacional será criado, montado, e plenamente acessível e manuseável conforme o sysadmin desejar, via chroot. Os mesmos binds de pac-base serão montados aqui também. Após saír do chroot, a branch padrão será renomeada, e a branch transacional será tornada como padrão. O sysadmin deve reiniciar e conferir se suas modificações foram bem sucedidas. Em caso contrário, basta usar --restore-root para reverter.
+
+Base-manager e pac-base por padrão não fazem nenhuma operação destrutiva (sendo scritps simples, seu comportamento pode ser alterado se o sysadmin assim desejar), e buscam ao máximo tratar erros de forma a não deixar o sysadmin sem uma branch main a ser usada no boot seguinte. Por vezes, isso implica em voltar muitas branchs, e tornar o root **atualmente em uso** como upstream, ignorando quantos sejam os branchs à frente que já existam. Exemplo, supondo uma máquina que não é reiniciada a um mês, que foi atualizada a cada 3 dias (via timer rodando pac-base -Syu --noconfirm), gerando 10 novas branchs, caso ocorra um erro na 11ª atualização, a correção de erros de base-manager/pac-base tentará voltar até à branch que deu boot na máquina, por considerá-la confiável, e portando ignorando todos os updates subsequentes, sem excluí-los. E se o timer continuar rodando, na 12ª atualização (dia 36), ele tentará aplicar todas as atualizações perdidas numa única nova branch. Leve isso em conta ao automatizar o processo de atualização (usando termos de git, seria algo como git checkout -b transactional main && git fetch -- )
 
 Para editar PacmanRoot sem nenhuma montagem bind, basta, após base-manager --edit-pacmanroot, desmontá-las. Tenha em mente que, caso use o pacman nessa situação, se a cache não for limpa, dali por diante ela será propagada em todas as novas branchs, assim como as modificações. Além disso, no processo de atualizar a grub, todas as montagens bind serão refeitas, portando editar /etc/grub.d e /etc/default/grub diretamente de PacmanRoot (e não nas montagens bind) é inútil.
 
