@@ -1,5 +1,5 @@
 #!/bin/bash
-block_device_root="name_block_device_here"
+block_device_root="/dev/sda3"
 default_root="@base_system"
 update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 transactional_dir=$(mktemp -d -p /tmp)
@@ -59,9 +59,9 @@ function manage_branch_error(){
         status="newrootmount"
     elif [ $status == "error" ] || [ $status == "none" ] ; then
         echo "ocorreu um erro transacional, tentando restaurar via base-manager --restore-root" &&
-        export id_to_restore=$emergency_id base-manager --restore-root-pacman
+        reason="pacman" id_to_restore=$emergency_id  base-manager "--restore-root-pacman"
     else
-        echo "ocorreu um erro transacional. Abortando imediatamente. Confira manualmente o estado do sistema de arquivos e a lista de subvolumes. Se não houver nenhum chamado $default_root, o próximo boot falhará. O código de erro foi $err" && exit 1
+        echo "ocorreu um erro transacional desconhecido. Abortando imediatamente. Confira manualmente o estado do sistema de arquivos e a lista de subvolumes. Se não houver nenhum chamado $default_root, o próximo boot falhará. O código de erro foi $err" && exit 1
     fi
 }
 function bootloader_update(){
@@ -115,7 +115,7 @@ function decision_pac(){
 		umount -Rv $toplevel_dir &&\
 		rmdir $transactional_dir &&\
 		rmdir $toplevel_dir &&\
-        echo "transação abortada pelo usuário"
+        echo "transação abortada devido a um erro anterior"
 	fi
 }
 function exit_pac_base_sucess(){
@@ -123,7 +123,8 @@ function exit_pac_base_sucess(){
 	if [ $status == "newrootmount" ] ; then
     update_grub
 	else
-        exit 1
+        status="error" &&
+        manage_branch_error
 	fi
 }
 function run_pac_base (){
