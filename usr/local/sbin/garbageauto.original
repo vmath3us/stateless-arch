@@ -27,9 +27,9 @@ function branch_garbage(){
     for operator in ${!parameter[@]} ; do
         moment=$(date +%Y-%m-%d--%H-%M-%S)
         if [    -z ${shield[$operator]}   ] ; then
-            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | cut -f1 ))
+            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | cut -f1 | grep -v $never_delete_id))
         else
-            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | grep -Ev ${shield[$operator]} | cut -f1 ))
+            subvol=($(btrfs su l -st $toplevel_dir | grep ${parameter[$operator]} | grep -Ev ${shield[$operator]} | cut -f1 | grep -v $never_delete_id))
         fi
         totalcandidate=${#subvol[@]}
         controller=${preserve[$operator]}
@@ -46,4 +46,6 @@ function branch_garbage(){
         umount -R $toplevel_dir
         base-manager --bootloader-update-pos-garbage                  ### special entrypoint for garbage collectors in base-manager
 }
+never_delete=($(btrfs su show /))
+never_delete_id=${never_delete[18]}
 garbage_config
