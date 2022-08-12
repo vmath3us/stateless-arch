@@ -101,6 +101,9 @@ function type_operation_select(){
         --edit-pacmanroot)
         transactional_operation && edit_pacman_root
               ;;
+        --restore-root-pacman)
+        restore_root_p2
+		;;
    esac
 }
 function pre_mount_work(){
@@ -296,12 +299,15 @@ function restore_root_p2(){
     restore_root_p3
 }
 function restore_root_p3(){
-    if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ]; then
+    if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ] && [ $reason != "pacman" ]; then
     mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
     btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
     end_base_manager
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "posgrub" ]; then
     mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
+    btrfs su snap -r $restore_dir $toplevel_dir/$default_root
+    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ]; then
+    mv $toplevel_dir/$default_root $toplevel_dir/@branch-pacman-error-deprecated-in--$moment &&\
     btrfs su snap -r $restore_dir $toplevel_dir/$default_root
 else
   btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
@@ -456,10 +462,11 @@ function terms_user_base_manager(){
             terms_user_base_manager
                 ;;
       --restore-root-pacman)
+          menu_select=$@
           id_to_restore=$id_to_restore
-          restore_root_p2
+	  reason=$reason
+          type_operation_select
                 ;;
-      --restore-root)
       --reset-sysadmin-data)
           menu_select=$@
             clear
