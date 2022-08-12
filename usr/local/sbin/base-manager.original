@@ -114,6 +114,7 @@ function transactional_operation(){
     mount $block_device_root $transactional_dir -o "subvol="@transactional_branch
 }
 function bind_mount(){
+    mkdir -p /var/cache/pacman/pkg &&\
     mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
     mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
     mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
