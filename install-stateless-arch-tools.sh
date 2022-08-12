@@ -172,7 +172,11 @@ function end_implementation (){
               Verique suas alterações no cabeçalho do scritp de instalação, ou por colisão entre
             os nomes aqui usados e seus subvolumes já existentes
 " &&
+<<<<<<< HEAD
             exit $err
+=======
+            exit 1
+>>>>>>> 5b5a3862e3a523e3df0afead84bba5a0e82d9487
     fi
 }
 welcome
