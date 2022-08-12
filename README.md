@@ -36,7 +36,6 @@ branch backup-master
 * passwd;
 * gerar locales;
 * git clone desse repositório(pode ser em /tmp);
-* trocar para a branch transactional-archbranch backup-master
 * executar o scritp install-stateless-arch-tools.sh
 * seguir as instruções finais do scritp (somente operações normais em qualquer instalação do ArchLinux)
 * reiniciar
