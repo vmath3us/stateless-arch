@@ -455,6 +455,11 @@ function terms_user_base_manager(){
             help_restore_root
             terms_user_base_manager
                 ;;
+      --restore-root-pacman)
+          id_to_restore=$id_to_restore
+          restore_root_p2
+                ;;
+      --restore-root)
       --reset-sysadmin-data)
           menu_select=$@
             clear
