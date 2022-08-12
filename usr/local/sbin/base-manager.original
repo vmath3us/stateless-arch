@@ -111,18 +111,18 @@ mount $block_device_root $toplevel_dir -o "subvolid="5
 }
 function transactional_operation(){
     btrfs su snap $toplevel_dir/$default_root $toplevel_dir/@transactional_branch &&\
-      mount $block_device_root $transactional_dir -o "subvol="@transactional_branch
+    mount $block_device_root $transactional_dir -o "subvol="@transactional_branch
 }
 function bind_mount(){
-      mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
-      mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
-      mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
-      mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/ &&\
-      mount --bind /etc/pacman.d/ $transactional_dir/etc/pacman.d &&\
-      mount --bind /etc/pacman.conf $transactional_dir/etc/pacman.conf &&\
-      mount --bind /etc/mkinitcpio.conf $transactional_dir/etc/mkinitcpio.conf &&\
-      mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
-      mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
+    mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
+    mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
+    mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
+    mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/ &&\
+    mount --bind /etc/pacman.d/ $transactional_dir/etc/pacman.d &&\
+    mount --bind /etc/pacman.conf $transactional_dir/etc/pacman.conf &&\
+    mount --bind /etc/mkinitcpio.conf $transactional_dir/etc/mkinitcpio.conf &&\
+    mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
+    mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
 }
 function bootloader_update(){
     bind_mount &&
@@ -181,18 +181,18 @@ function end_base_manager(){
         rmdir $toplevel_dir &&
         echo "transação concluída"
     else
-        exiting="failed" &&\
-        critical_error_exiting
+        $status="op1"
+        manager_branch_error
     fi
 }
 function end_base_manager_error(){
     if [ $status == "op1" ] || [ ! -d $toplevel_dir/$default_root ] || [ $reason == "posgrub" ] ; then
-            exiting="failed"
-            array_to_restore=($(btrfs su show /)) &&
-            id_to_restore=${array_to_restore[18]} &&
-            echo "houve um erro transacional, tentando recuperar, tornando o / atual como branch main..." &&
-            restore_root_p2 &&
-            end_base_manager || critical_error_exiting
+        exiting="failed"
+        array_to_restore=($(btrfs su show /)) &&
+        id_to_restore=${array_to_restore[18]} &&
+        echo "houve um erro transacional, tentando recuperar, tornando o / atual como branch main..." &&
+        restore_root_p2 &&
+        end_base_manager || critical_error_exiting
     elif [ $status == "op2" ] ; then
         exiting="failed" &&
         transactional_failed_exiting  
@@ -242,13 +242,13 @@ function help_bootloader_update(){
   "
 }
 function update_grub(){
-   bootloader_update
-       if [ $? -eq 0 ] ; then
-           end_base_manager
-       else
-           reason="posgrub"
-           echo "a atualização do bootloader na nova branch saiu com status de erro, tentando reverter transação" && end_base_manager_error
-       fi
+    bootloader_update
+    if [ $? -eq 0 ] ; then
+        end_base_manager
+    else
+        reason="posgrub"
+        echo "a atualização do bootloader na nova branch saiu com status de erro, tentando reverter transação" && end_base_manager_error
+    fi
 }
 
 ########################################################################################################################
@@ -288,6 +288,10 @@ printf "
                  ;;
                  *)
                 printf "restauração cancelada, saindo com status de erro"
+                umount -Rv $transactional_dir
+                umount -Rv $toplevel_dir
+                rmdir $transactional_dir
+                rmdir $toplevel_dir
                 exit 1
           esac
 }
@@ -300,18 +304,22 @@ function restore_root_p2(){
 }
 function restore_root_p3(){
     if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ] && [ $reason != "pacman" ]; then
-    mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
-    btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
-    end_base_manager
+        mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-manually--$moment &&\
+        btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
+        end_base_manager
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "posgrub" ]; then
-    mv $toplevel_dir/$default_root $toplevel_dir/@branch-root-deprecated-in--$moment &&\
-    btrfs su snap -r $restore_dir $toplevel_dir/$default_root
-    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ]; then
-    mv $toplevel_dir/$default_root $toplevel_dir/@branch-pacman-error-deprecated-in--$moment &&\
-    btrfs su snap -r $restore_dir $toplevel_dir/$default_root
-else
-  btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
-  end_base_manager
+        mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-bootloader-error--$moment &&\
+        btrfs su snap -r $restore_dir $toplevel_dir/$default_root
+    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] && [ ! -d $toplevel_dir/@transactional_branch ]; then
+        mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
+        btrfs su snap -r $restore_dir $toplevel_dir/$default_root
+    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] && [ -d $toplevel_dir/@transactional_branch ]; then
+        mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
+        btrfs su snap -r $restore_dir $toplevel_dir/$default_root &&\
+        btrfs su del $toplevel_dir/@transactional_branch
+    else
+        btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
+        end_base_manager
     fi
 }
 
@@ -407,9 +415,9 @@ function help_edit_pacman_root(){
 ########################################################################################################################
 
 function edit_pacman_root (){
-      btrfs filesystem sync $toplevel_dir &&\
-        sufix="--edit-pacmanroot"
-        bind_mount &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    sufix="--edit-pacmanroot"
+    bind_mount &&\
 printf "Entrando em PacmanRoot
 "
     arch-chroot $transactional_dir
@@ -418,7 +426,7 @@ printf "Entrando em PacmanRoot
 function exiting_edit_pacman_root(){
     manage_branch &&
 	if [ $? -eq 0 ] ; then
-		    update_grub
+        update_grub
 	fi
 }
 
@@ -440,50 +448,50 @@ function terms_user_base_manager(){
 }
 #######################################################################################################################
       case $@ in
-      --help)
-            help_global
+    --help)
+         help_global
                 ;;
-      --bootloader-update)
-          menu_select=$@
-            clear
-            stateless_arch_welcome
-            help_bootloader_update
-            terms_user_base_manager
+    --bootloader-update)
+         menu_select=$@
+         clear
+         stateless_arch_welcome
+         help_bootloader_update
+         terms_user_base_manager
                 ;;
-	--bootloader-update-pos-garbage)   ####################### entrypoint for garbage-collector
-          menu_select="--bootloader-update"
-            type_operation_select
+    --bootloader-update-pos-garbage)    ####################### entrypoint for garbage-collector
+         menu_select=$@
+         type_operation_select
                 ;;
-      --restore-root)
-          menu_select=$@
-            clear
-            stateless_arch_welcome
-            help_restore_root
-            terms_user_base_manager
+    --restore-root)
+         menu_select=$@
+         clear
+         stateless_arch_welcome
+         help_restore_root
+         terms_user_base_manager
                 ;;
-      --restore-root-pacman)
-          menu_select=$@
-          id_to_restore=$id_to_restore
-	  reason=$reason
-          type_operation_select
+    --restore-root-pacman)              ########################## entrypoint for emergency-mode pac-base
+         menu_select=$@
+         id_to_restore=$id_to_restore
+    	 reason=$reason
+         type_operation_select
                 ;;
-      --reset-sysadmin-data)
-          menu_select=$@
-            clear
-            stateless_arch_welcome
-            help_reset_sysadmin_data
-            terms_user_base_manager
+    --reset-sysadmin-data)
+         menu_select=$@
+         clear
+         stateless_arch_welcome
+         help_reset_sysadmin_data
+         terms_user_base_manager
                 ;;
-      --edit-pacmanroot)
-          menu_select=$@
-            clear
-            stateless_arch_welcome
-            help_edit_pacman_root
-            terms_user_base_manager
+    --edit-pacmanroot)
+         menu_select=$@
+         clear
+         stateless_arch_welcome
+         help_edit_pacman_root
+         terms_user_base_manager
                 ;;
                     *)
-        stateless_arch_welcome
-        display_functions
-          exit 0
+         stateless_arch_welcome
+         display_functions
+         exit 0
                 ;;
       esac
