@@ -88,8 +88,8 @@ toplevel_dir=$(mktemp -d -p /tmp)
 function type_operation_select(){
         pre_mount_work
       case $menu_select in
-        --bootloader-update)
-        sufix="--bootloader-update"
+        --bootloader-update|--bootloader-update-pos-garbage)
+        sufix=$menu_select
         transactional_operation && manage_branch && update_grub || echo "confira o dmesg por erros no sistema de arquivos, houve um erro transacional."
               ;;
         --restore-root)
