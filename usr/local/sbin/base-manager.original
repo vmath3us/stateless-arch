@@ -283,7 +283,7 @@ printf "
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
                  y|Y)
-                btrfs su l -s $toplevel_dir | grep branch-root--
+                btrfs su l $toplevel_dir | grep branch-root--
                 read -p "restaurar branch ID: " id_to_restore
                 restore_root_p2
                  ;;
