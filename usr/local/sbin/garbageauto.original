@@ -1,7 +1,7 @@
 #!/bin/bash
 ########################################## to use in systemd.timer
 function garbage_config(){
-    block_device_root="name_block_device_here"
+    block_device_root=$(grub-probe / --target=device)
     declare parameter
         parameter[1]="branch-root"
         parameter[2]="branch-home"  ### example sufix name to home subvol snapshots, case sensitive
