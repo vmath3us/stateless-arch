@@ -111,7 +111,7 @@ mount_device_to_manage_subvols
 function mount_device_to_manage_subvols(){
   mount $rootblock -o "subvolid="5 $toplevel_dir &&\
     moment=$(date +%Y-%m-%d--%H-%M-%S)
-    btrfs su snap -r $toplevel_dir/$subvol_to_move $toplevel_dir/@root-pre-stateless-in--$moment &&\
+    btrfs su snap $toplevel_dir/$subvol_to_move $toplevel_dir/@root-pre-stateless-in--$moment &&\
     mv $toplevel_dir/$subvol_to_move $toplevel_dir/$default_root &&\
       if [ $? -eq 0 ] ; then
         btrfs filesystem sync $toplevel_dir &&\
