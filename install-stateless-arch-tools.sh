@@ -105,14 +105,16 @@ while [ $time -ge 1 ] ; do
   sleep 1s
   let "time--" 
 done
-mount_device_to_manage_subvols
+mount_device_and_manage_subvols
 }
 
-function mount_device_to_manage_subvols(){
+function mount_device_and_manage_subvols(){
   mount $rootblock -o "subvolid="5 $toplevel_dir &&\
     moment=$(date +%Y-%m-%d--%H-%M-%S)
     btrfs su snap $toplevel_dir/$subvol_to_move $toplevel_dir/@root-pre-stateless-in--$moment &&\
     mv $toplevel_dir/$subvol_to_move $toplevel_dir/$default_root &&\
+    btrfs filesystem sync $toplevel_dir &&\
+    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root-pos-stateless-in-$moment &&\
       if [ $? -eq 0 ] ; then
         btrfs filesystem sync $toplevel_dir &&\
           copy_scripts_to_root
@@ -143,6 +145,7 @@ function copy_scripts_to_root(){
   end_implementation
 }
 function end_implementation (){
+  moment=$(date +%Y-%m-%d--%H-%M-%S) &&\
   btrfs su cr $toplevel_dir/$default_sysadmin_data &&
       err=$?
     if [ $err -eq 0 ] ; then
