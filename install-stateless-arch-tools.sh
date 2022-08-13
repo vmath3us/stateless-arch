@@ -74,7 +74,7 @@ function check_deps (){
   fi
 }
 function manage_files(){
-  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/pac-base.original ] && [ -f usr/local/sbin/garbageauto.original ] && [ -f usr/local/sbin/garbage-and-commit-root.original ] ; then
+  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/pac-base.original ] && [ -f usr/local/sbin/garbageauto.original ] ; then
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/base-manager.original > usr/local/sbin/base-manager &&\
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/pac-base.original > usr/local/sbin/pac-base &&\
     sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/garbage-and-commit-root.original > usr/local/sbin/garbage-and-commit-root &&\
@@ -129,7 +129,6 @@ function copy_scripts_to_root(){
   cp usr/local/sbin/base-manager /usr/local/sbin/base-manager &&\
   cp usr/local/sbin/remountfs /usr/local/sbin/remountfs &&\
   cp usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
-  cp usr/local/sbin/garbage-and-commit-root /usr/local/sbin/garbage-and-commit-root &&\
   cp usr/local/sbin/garbageauto /usr/local/sbin/garbageauto &&\
   cp usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   cp usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
@@ -172,11 +171,7 @@ function end_implementation (){
               Verique suas alterações no cabeçalho do scritp de instalação, ou por colisão entre
             os nomes aqui usados e seus subvolumes já existentes
 " &&
-<<<<<<< HEAD
             exit $err
-=======
-            exit 1
->>>>>>> 5b5a3862e3a523e3df0afead84bba5a0e82d9487
     fi
 }
 welcome
