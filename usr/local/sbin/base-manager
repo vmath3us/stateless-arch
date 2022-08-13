@@ -307,7 +307,7 @@ function restore_root_p3(){
     if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ] && [ $reason != "pacman" ]; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-manually--$moment &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
-        end_base_manager
+        update_grub
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "posgrub" ]; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-bootloader-error--$moment &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root
