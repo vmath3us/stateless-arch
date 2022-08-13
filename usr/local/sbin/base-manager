@@ -93,6 +93,7 @@ function type_operation_select(){
         transactional_operation && manage_branch && update_grub || echo "confira o dmesg por erros no sistema de arquivos, houve um erro transacional."
               ;;
         --restore-root)
+            reason="manual"
           restore_root
               ;;
         --reset-sysadmin-data)
@@ -283,7 +284,7 @@ printf "
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
                  y|Y)
-                btrfs su l $toplevel_dir | grep branch-root--
+                btrfs su l $toplevel_dir | grep branch-root-
                 read -p "restaurar branch ID: " id_to_restore
                 restore_root_p2
                  ;;
