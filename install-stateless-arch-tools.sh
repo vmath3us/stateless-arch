@@ -58,7 +58,7 @@ function check_deps (){
     printf "
     dependencias conferidas, adaptando arquivos
 " &&\
-        manage_files
+        last_chance
       else
         printf "
         alguma das dependências não foi satisfeita.
@@ -71,21 +71,6 @@ function check_deps (){
 
 "
         exit 1
-  fi
-}
-function manage_files(){
-  if [ -f usr/local/sbin/base-manager.original ] && [ -f usr/local/sbin/pac-base.original ] && [ -f usr/local/sbin/garbageauto.original ] ; then
-    sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/base-manager.original > usr/local/sbin/base-manager &&\
-    sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/pac-base.original > usr/local/sbin/pac-base &&\
-    sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/garbage-and-commit-root.original > usr/local/sbin/garbage-and-commit-root &&\
-    sed "s|name_block_device_here|"$rootblock"|g" usr/local/sbin/garbageauto.original > usr/local/sbin/garbageauto &&\
-    last_chance
-  else
-    printf "
-    os scripts de implementação não estão nos locais corretos. Clone o repositório novamente,
-    ou edite o script de instalação para refletir corretamente suas mudanças. Saindo com status de erro
-"
-    exit 1
   fi
 }
 function last_chance (){
@@ -101,7 +86,7 @@ while [ $time -ge 1 ] ; do
   ###############################################################################################
 
 "
-  echo "arquivos adaptados, iniciando manipulação de subvolumes e propagação de arquivos em $time segundos, ctrl-c para cancelar" 
+  echo "iniciando manipulação de subvolumes e propagação de arquivos em $time segundos, ctrl-c para cancelar" 
   sleep 1s
   let "time--" 
 done
@@ -142,7 +127,11 @@ function copy_scripts_to_root(){
   chmod a+x /usr/local/sbin/remountfs &&\
   chmod a+x /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   chmod a+x /usr/lib/initcpio/install/stateless-mode-boot &&\
-  end_implementation
+  end_implementation || printf "
+    os scripts de implementação não estão nos locais corretos. Clone o repositório novamente,
+    ou edite o script de instalação para refletir corretamente suas mudanças. Saindo com status de erro
+"
+
 }
 function end_implementation (){
   moment=$(date +%Y-%m-%d--%H-%M-%S) &&\
