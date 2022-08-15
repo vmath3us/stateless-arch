@@ -176,15 +176,19 @@ function end_base_manager(){
         btrfs filesystem sync $toplevel_dir &&\
         execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
         btrfs filesystem sync $toplevel_dir &&\
+        clear_dir
+    else
+        $status="op1"
+        manager_branch_error
+    fi
+
+}
+function clear_dir(){
         umount -Rv $transactional_dir &&\
         umount -Rv $toplevel_dir &&
         rmdir $transactional_dir &&
         rmdir $toplevel_dir &&
         echo "transação concluída"
-    else
-        $status="op1"
-        manager_branch_error
-    fi
 }
 function end_base_manager_error(){
     if [ $status == "op1" ] || [ ! -d $toplevel_dir/$default_root ] || [ $reason == "posgrub" ] ; then
@@ -214,7 +218,7 @@ function critical_error_exiting(){
     if [ $exiting == "sucefull" ] && [ -d $toplevel_dir/$default_root ] ; then
         btrfs filesystem sync $toplevel_dir &&\
         umount -Rv $toplevel_dir &&\
-        rmdir $transactional_dir &&\
+        rmdir $transactional_dir &&wq
         rmdir $toplevel_dir &&\
         echo "houve uma tentativa de reversão devido a um erro anterior, confira se existe na sua lista de subvolumes um chamado $default_root. Caso não exista, o próximo boot falhará, e caírá no grub-rescue shell. Use base-manager --restore-root imediatamente caso não exista $default_root. Confira usando btrfs su l / | grep $default_root" && exit 1
     elif [ $exiting == "failed" ] ; then
@@ -243,7 +247,7 @@ function help_bootloader_update(){
   "
 }
 function update_grub(){
-    if [ -z $reason ] || [ $reason != "prestateless" ] || [ $reason == "manual" ]; then
+    if [ -z $reason ] || [ $reason != "prestateless" ]; then
         bootloader_update
         if [ $? -eq 0 ] ; then
             end_base_manager
@@ -321,21 +325,22 @@ function restore_root_p2(){
     restore_root_p3
 }
 function restore_root_p3(){
-    if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ] && [ $reason != "pacman" ] && [ $reason =! "prestateless" ]; then
+    if [ -d $toplevel_dir/$default_root ] && [ $reason == "manual" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-manually--$moment &&\
+        btrfs filesystem sync $toplevel_dir &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
         update_grub
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "posgrub" ]; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-bootloader-error--$moment &&\
+        btrfs filesystem sync $toplevel_dir &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root
-    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] && [ ! -d $toplevel_dir/@transactional_branch ]; then
+    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
-        btrfs su snap -r $restore_dir $toplevel_dir/$default_root
-    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] && [ -d $toplevel_dir/@transactional_branch ]; then
-        mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
+        btrfs filesystem sync $toplevel_dir &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root &&\
-        btrfs su del $toplevel_dir/@transactional_branch
-    elif [ $reason == "prestateless" ] ; then
+            if  [ -d $toplevel_dir/@transactional_branch  ] ;  then btrfs su del $toplevel_dir/@transactional_branch fi &&\
+        clear_dir
+    elif [ -d $toplevel_dir/$default_root ] && [ $reason == "prestateless" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-no-stateless--$moment &&\
         btrfs su snap $restore_dir $toplevel_dir/$default_root && ##### not read only
         btrfs filesystem sync $toplevel_dir &&\
@@ -343,6 +348,7 @@ function restore_root_p3(){
         update_grub
     else
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
+        btrfs filesystem sync $toplevel_dir &&\
         end_base_manager
     fi
 }
