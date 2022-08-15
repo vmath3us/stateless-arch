@@ -92,8 +92,7 @@ function type_operation_select(){
         sufix=$menu_select
         transactional_operation && manage_branch && update_grub || echo "confira o dmesg por erros no sistema de arquivos, houve um erro transacional."
               ;;
-        --restore-root)
-            reason="manual"
+        --restore-root|--restore-root-no-stateless)
           restore_root
               ;;
         --reset-sysadmin-data)
@@ -244,12 +243,21 @@ function help_bootloader_update(){
   "
 }
 function update_grub(){
-    bootloader_update
-    if [ $? -eq 0 ] ; then
-        end_base_manager
+    if [ -z $reason ] || [ $reason != "prestateless" ] || [ $reason == "manual" ]; then
+        bootloader_update
+        if [ $? -eq 0 ] ; then
+            end_base_manager
+        else
+            reason="posgrub"
+            echo "a atualização do bootloader na nova branch saiu com status de erro, tentando reverter transação" && end_base_manager_error
+        fi
     else
-        reason="posgrub"
-        echo "a atualização do bootloader na nova branch saiu com status de erro, tentando reverter transação" && end_base_manager_error
+        bootloader_update &&\
+        umount -Rv $transactional_dir &&\
+        umount -Rv $toplevel_dir &&\
+        rmdir $transactional_dir &&\
+        rmdir $toplevel_dir &&\
+        echo "revertido para branch pre-stateless :-("
     fi
 }
 
@@ -275,16 +283,24 @@ printf "
 ########################################################################################################################
 
 function restore_root(){
+    if [ $reason == "manual" ] ; then
+        search_parameter="branch-root"
 printf "
            será exibida a lista de branchs do root gerados durante atualizações,
            pré --bootloader-update e pré --edit-pacmanroot.
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
 "
+    else [ $reason == "prestateless" ] ; then
+    search_parameter="pre-stateless"
+printf "
+           será exibido a branch pre-stateless; se deseja realmente reverter para ela, prossiga e informe o ID
+"
+    fi
            read -p "Prosseguir? (y/N): " confirm_restore
            case $confirm_restore in
                  y|Y)
-                btrfs su l $toplevel_dir | grep branch-root-
+                btrfs su l $toplevel_dir | grep $search_parameter
                 read -p "restaurar branch ID: " id_to_restore
                 restore_root_p2
                  ;;
@@ -305,7 +321,7 @@ function restore_root_p2(){
     restore_root_p3
 }
 function restore_root_p3(){
-    if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ] && [ $reason != "pacman" ]; then
+    if [ -d $toplevel_dir/$default_root ] && [ $reason != "posgrub" ] && [ $reason != "pacman" ] && [ $reason =! "prestateless" ]; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-manually--$moment &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
         update_grub
@@ -319,6 +335,12 @@ function restore_root_p3(){
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root &&\
         btrfs su del $toplevel_dir/@transactional_branch
+    elif [ $reason == "prestateless" ] ; then
+        mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-no-stateless--$moment &&\
+        btrfs su snap $restore_dir $toplevel_dir/$default_root && ##### not read only
+        btrfs filesystem sync $toplevel_dir &&\
+        mount $block_device_root $transactional_dir -o "subvol="$default_root &&\
+        update_grub
     else
         btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
         end_base_manager
@@ -465,6 +487,7 @@ function terms_user_base_manager(){
          type_operation_select
                 ;;
     --restore-root)
+         reason="manual"
          menu_select=$@
          clear
          stateless_arch_welcome
@@ -476,6 +499,14 @@ function terms_user_base_manager(){
          id_to_restore=$id_to_restore
     	 reason=$reason
          type_operation_select
+                ;;
+    --restore-root-no-stateless)
+         reason="prestateless"
+         menu_select=$@
+         clear
+         stateless_arch_welcome
+         help_restore_root
+         terms_user_base_manager
                 ;;
     --reset-sysadmin-data)
          menu_select=$@
