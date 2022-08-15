@@ -59,8 +59,8 @@ function manage_branch_error(){
     elif [ $status == "newrootmount" ] ; then
         status="newrootmount"
     elif [ $status == "error" ] || [ $status == "none" ] ; then
-        echo "ocorreu um erro transacional, movendo para o root atualmente em uso via base-manager --restore-root" &&
-        reason="pacman" id_to_restore=$emergency_id  base-manager "--restore-root-pacman"
+        echo "ocorreu um erro transacional crítico, movendo para o root atualmente em uso via base-manager --restore-root" &&
+        reason="pacman" id_to_restore=$emergency_id  base-manager "--restore-root-pacman" && clear_dir
     else
         echo "ocorreu um erro transacional desconhecido. Abortando imediatamente. Confira manualmente o estado do sistema de arquivos e a lista de subvolumes. Se não houver nenhum chamado $default_root, o próximo boot falhará. O código de erro foi $err" && exit 1
     fi
@@ -74,19 +74,17 @@ function end_base_manager(){
 	    btrfs filesystem sync $toplevel_dir &&\
 	    execute=$(btrfs property set -ts $toplevel_dir/$default_root ro true) &&\
     	btrfs filesystem sync $toplevel_dir &&\
-    	umount -Rv $transactional_dir &&\
-	    umount -Rv $toplevel_dir &&
-	    rmdir $transactional_dir &&
-	    rmdir $toplevel_dir
+        clear_dir
     else
         status="error" &&
         manage_branch_error
     fi
 }
-function end_base_manager_error(){
-    umount -Rv $transactional_dir &&\
-    umount -Rv $toplevel_dir &&\
-    rmdir $transactional_dir && rmdir $toplevel_dir
+function clear_dir(){
+    umount -Rv $transactional_dir
+    umount -Rv $toplevel_dir
+    rmdir $transactional_dir
+    rmdir $toplevel_dir
 }
 function update_grub(){
    bootloader_update
@@ -101,10 +99,11 @@ function update_grub_error(){
     umount -Rv $transactional_dir &&\
     mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-grub-error--$moment &&\
     mv $toplevel_dir/$branch_name $toplevel_dir/$default_root &&\
+	btrfs filesystem sync $toplevel_dir &&\
     umount -Rv $toplevel_dir &&\
     rmdir $transactional_dir &&\
     rmdir $toplevel_dir &&\
-    echo "transação revertida para a branch válida mais recente devido a um erro anterior"
+    echo "transação revertida para a branch válida mais recente devido a um erro anterior" || status="error"  && manage_branch_error
 }
 
 function decision_pac(){
