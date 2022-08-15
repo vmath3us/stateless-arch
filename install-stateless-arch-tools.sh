@@ -95,7 +95,7 @@ mount_device_and_manage_subvols
 
 function mount_device_and_manage_subvols(){
     echo "limpando cache do pacstrap..."
-    pacman -Scc --noconfirm &&
+    rm -rf /var/cache/pacman/pkg/* &&\
   mount $rootblock -o "subvolid="5 $toplevel_dir &&\
     moment=$(date +%Y-%m-%d--%H-%M-%S)
     btrfs su snap $toplevel_dir/$subvol_to_move $toplevel_dir/@root-pre-stateless-in--$moment &&\
