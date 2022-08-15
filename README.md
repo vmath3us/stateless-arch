@@ -31,7 +31,7 @@ Em Stateless-Arch transacional, adicionar e remover programas, bem como quaisque
 
 implementar Stateless Arch em uma instalação nova é simples como:
 
-* pacstrap -c em um único subvolume btrfs (/boot incluso). Deve constar nos pacotes, arch-install-scripts grub grub-btrfs bash e git (-c para não incluir na base a cache do pacstrap);
+* pacstrap em um único subvolume btrfs (/boot incluso). Deve constar nos pacotes, arch-install-scripts grub grub-btrfs bash e git;
 * arch-chroot no subvolume;
 * passwd;
 * gerar locales;
