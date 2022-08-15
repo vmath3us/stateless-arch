@@ -30,7 +30,7 @@ Em Stateless-Arch transacional, adicionar e remover programas, bem como quaisque
 # Implementação <h2>
 
 implementar Stateless Arch em uma instalação nova é simples como:
-branch backup-master
+
 * pacstrap -c em um único subvolume btrfs (/boot incluso). Deve constar nos pacotes, arch-install-scripts grub grub-btrfs bash e git (-c para não incluir na base a cache do pacstrap);
 * arch-chroot no subvolume;
 * passwd;
@@ -45,7 +45,7 @@ branch backup-master
 # Arquitetura <h3>
 
 Ao concluir o boot, a raiz consistirá em duas camadas, sendo:
-branch backup-master
+
 **Primeira camada: PacmanRoot**: um subvolume btrfs, com permissão somente leitura, onde está instalado o ArchLinux, com todas as pastas do root, **incluindo** /boot (obviamente /boot/efi será um ponto de montagem para fat32 EFI durante a instalação da grub, se efi). Esse root pode inicialmente possuir configurações mínimas, somente senha root, locales, e os arquivos e modificações necessárias para que Stateless Arch funcione. O próprio fstab não precisa ficar aqui, sua edição durante a instalação do sistema pode ser ignorada. Em todo boot de uma instalação com Stateless-Arch transacional, o PacmanRoot terá sua permissão de escrita trocada para false.
 
 
@@ -66,7 +66,7 @@ Para usar um ArchLinux com Stateless Arch, o sysadmin deve aceitar e conviver co
 
 * atualização e remoção de pacotes somente de forma mediada por pac-base, não diretamento pelo pacman(discutido a seguir), e precisando reiniciar para ter acesso às modificações;
 
-* como já deu para pbranch backup-mastererceber, grub como bootloader é uma exigencia aqui. Faço isso para poder incluir o próprio kernel nos branchs. Dado que a grub consegue lidar com kernel e initrd sob btrfs, comprimido ou não, seja em legacy ou em efi, se torna uma ferramenta com um fator social e até mesmo ambiental importante : hardware sem capacidade de boot efi continua sendo suportado, e ao ter toda a raiz inclusa em branchs, a recuperação de uma atualização problemática, ou mesmo um reset total não passa por mais carga de acesso aos repositórios para baixar iso e pacotes. Mesmo implementar o ArchLinux em outra máquina se torna fácil como um btrfs send via ssh de seu último branch, com a certeza que isso não incluirá chaves ssh,configurações de sysadmins e grupos, pontos de acesso wifi, ou outras configurações sensíveis. PacmanRoot está sempre em "estado de pacstrap", ou muito perto disso. 
+* como já deu para perceber, grub como bootloader é uma exigencia aqui. Faço isso para poder incluir o próprio kernel nos branchs. Dado que a grub consegue lidar com kernel e initrd sob btrfs, comprimido ou não, seja em legacy ou em efi, se torna uma ferramenta com um fator social e até mesmo ambiental importante : hardware sem capacidade de boot efi continua sendo suportado, e ao ter toda a raiz inclusa em branchs, a recuperação de uma atualização problemática, ou mesmo um reset total não passa por mais carga de acesso aos repositórios para baixar iso e pacotes. Mesmo implementar o ArchLinux em outra máquina se torna fácil como um btrfs send via ssh de seu último branch, com a certeza que isso não incluirá chaves ssh,configurações de sysadmins e grupos, pontos de acesso wifi, ou outras configurações sensíveis. PacmanRoot está sempre em "estado de pacstrap", ou muito perto disso. 
 
 
 * a geração de locale-gen deve ser incluída diretamente na raiz, como já citado no processo de implementação, o que pode ser inconveniente caso o sysadmin troque constantemente de idioma; editar a raiz diretamente será discutido a seguir. Uma alternativa pode ser, durante a instalação do sistema, antes de implementar Stateless Arch, descomentar todos os locales em /etc/locale.gen, e gerar todos.
