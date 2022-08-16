@@ -50,7 +50,6 @@ function ident(){
 
 "
 }
-
 function text_help_global(){
     stateless_arch_welcome
      ident
@@ -71,7 +70,6 @@ function text_help_global(){
   "
     ident
 }
-
 function help_global (){
   text_help_global | less
 }
@@ -129,7 +127,6 @@ function bootloader_update(){
     bind_mount &&
     arch-chroot $transactional_dir $update_grub_command
 }
-
 function manage_branch(){
     manage_branch_1
 }
@@ -142,7 +139,7 @@ function manage_branch_1(){
     mv $toplevel_dir/$default_root $toplevel_dir/$branch_name &&\
     status="rootmoved" &&\
     manage_branch_error || manage_branch_error
-    }
+}
 function manage_branch_2(){
     status="op2"
     btrfs filesystem sync $toplevel_dir &&\
@@ -181,7 +178,6 @@ function end_base_manager(){
         $status="op1"
         manager_branch_error
     fi
-
 }
 function clear_dir(){
         umount -Rv $transactional_dir &&\
@@ -234,7 +230,6 @@ function critical_error_exiting(){
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-
 function help_bootloader_update(){
   printf "
   --bootloader-update
@@ -264,7 +259,6 @@ function update_grub(){
         echo "revertido para branch pre-stateless :-("
     fi
 }
-
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -295,7 +289,7 @@ printf "
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
 "
-    else [ $reason == "prestateless" ] ; then
+    else [ $reason == "prestateless" ]
     search_parameter="pre-stateless"
 printf "
            será exibido a branch pre-stateless; se deseja realmente reverter para ela, prossiga e informe o ID
@@ -337,9 +331,10 @@ function restore_root_p3(){
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
         btrfs filesystem sync $toplevel_dir &&\
-        btrfs su snap -r $restore_dir $toplevel_dir/$default_root &&\
-            if  [ -d $toplevel_dir/@transactional_branch  ] ;  then btrfs su del $toplevel_dir/@transactional_branch fi &&\
-        clear_dir
+        btrfs su snap -r $restore_dir $toplevel_dir/$default_root &&
+            if  [ -d $toplevel_dir/@transactional_branch ] ; then
+                btrfs su del $toplevel_dir/@transactional_branch
+            fi && clear_dir
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "prestateless" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-no-stateless--$moment &&\
         btrfs su snap $restore_dir $toplevel_dir/$default_root && ##### not read only
@@ -352,7 +347,6 @@ function restore_root_p3(){
         end_base_manager
     fi
 }
-
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
