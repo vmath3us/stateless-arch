@@ -113,4 +113,4 @@ O uso de Stateles Arch (transacional) da forma em que está nesse momento já é
 
 Para construir rapidamente um setup Stateless Arch focado em utilização de containers (semelhante ao Suse MicroOs e ao Fedora Silverblue), visite [Arch Start](https://github.com/vmath3us/arch-start). Lá estará um espelho da minha própria máquina, de forma que, de posse daquele repositório e desse, minha instalação é reproduzível.
 
-Para imagens de máquina virtual, acesse [Stateless Arch no Telegram](https://t.me/StatelessArch)
+Para imagens de máquina virtual, acesse [Stateless Arch no Telegram](https://t.me/StatelessArch) (após o primeiro boot, clone esse repositório, e cole manualmente os scritps em seus respectivos locais, para garantir que estejam na versão mais recente)
