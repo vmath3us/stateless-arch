@@ -322,16 +322,18 @@ function restore_root_p3(){
     if [ -d $toplevel_dir/$default_root ] && [ $reason == "manual" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-manually--$moment &&\
         btrfs filesystem sync $toplevel_dir &&\
-        btrfs su snap -r $restore_dir $toplevel_dir/$default_root && 
+        btrfs su snap $restore_dir $toplevel_dir/$default_root && 
+        btrfs filesystem sync $toplevel_dir &&\
+        mount $block_device_root $transactional_dir -o "subvol="$default_root &&
         update_grub
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "posgrub" ]; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-bootloader-error--$moment &&\
         btrfs filesystem sync $toplevel_dir &&\
-        btrfs su snap -r $restore_dir $toplevel_dir/$default_root
+        btrfs su snap $restore_dir $toplevel_dir/$default_root
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "pacman" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-pos-pacman-error--$moment &&\
         btrfs filesystem sync $toplevel_dir &&\
-        btrfs su snap -r $restore_dir $toplevel_dir/$default_root &&
+        btrfs su snap $restore_dir $toplevel_dir/$default_root &&
             if  [ -d $toplevel_dir/@transactional_branch ] ; then
                 btrfs su del $toplevel_dir/@transactional_branch
             fi && clear_dir
