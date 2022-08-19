@@ -521,7 +521,7 @@ function use_now(){
     use_now_chroot
 }
 function use_now_chroot(){
-    arch-chroot $transactional_dir su - $username
+    arch-chroot $transactional_dir  mount -av && su - $username
     clear_dir
 }
 ########################################################################################################################
