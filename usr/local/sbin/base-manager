@@ -505,7 +505,7 @@ printf "
 "
 }
 function find_user(){
-    read -p "digite o nome do usuário a ser usado: " username
+    read -p "digite o nome do usuário a ser usado (deixe em branco para root): " username
     use_now
 }
 function use_now(){
