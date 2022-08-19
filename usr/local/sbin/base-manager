@@ -271,6 +271,9 @@ printf "
   Abre um menu com a lista de branchs do root
   Escolha um deles, aguarde o fim da operação,
   e será a nova raiz padrão no próximo início do sistema
+  se você prosseguir, e no próximo passo responder com checkout, o root ATUALMENTE MONTADO será tornado
+  o padrão
+  checkout deve ser usado quando você tiver dado boot em uma das branchs via submenu da grub, e deseja que ela se torne o padrão de boot.
   ATENÇÃO: se você está usando outra ferramenta para gerar os branchs,
   use-a também para restaurar, e não esse scritp
 
@@ -288,6 +291,7 @@ printf "
            pré --bootloader-update e pré --edit-pacmanroot.
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
+           responda checkout agora caso queira restaurar para o root atualmente em uso.
 "
     else [ $reason == "prestateless" ]
     search_parameter="pre-stateless"
@@ -295,14 +299,19 @@ printf "
            será exibido a branch pre-stateless; se deseja realmente reverter para ela, prossiga e informe o ID
 "
     fi
-           read -p "Prosseguir? (y/N): " confirm_restore
+           read -p "Prosseguir? (y/N/checkout): " confirm_restore
            case $confirm_restore in
                  y|Y)
                 btrfs su l $toplevel_dir | grep $search_parameter
                 read -p "restaurar branch ID: " id_to_restore
                 restore_root_p2
                  ;;
-                 *)
+             checkout)
+                array_to_restore=($(btrfs su show /)) &&
+                id_to_restore=${array_to_restore[18]} &&
+                restore_root_p2
+                ;;
+                *)
                 printf "restauração cancelada, saindo com status de erro"
                 umount -Rv $transactional_dir
                 umount -Rv $toplevel_dir
@@ -339,7 +348,7 @@ function restore_root_p3(){
             fi && clear_dir
     elif [ -d $toplevel_dir/$default_root ] && [ $reason == "prestateless" ] ; then
         mv $toplevel_dir/$default_root $toplevel_dir/@branch-deprecated-no-stateless--$moment &&\
-        btrfs su snap $restore_dir $toplevel_dir/$default_root && ##### not read only
+        btrfs su snap $restore_dir $toplevel_dir/$default_root &&
         btrfs filesystem sync $toplevel_dir &&\
         mount $block_device_root $transactional_dir -o "subvol="$default_root &&\
         update_grub
