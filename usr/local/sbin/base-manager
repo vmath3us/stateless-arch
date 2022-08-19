@@ -38,8 +38,10 @@ printf "
            --help
            --bootloader-update
            --restore-root
+           --restore-root-no-stateless
            --reset-sysadmin-data
            --edit-pacmanroot
+           --use-now
 
 "
 }
@@ -60,6 +62,8 @@ function text_help_global(){
      help_reset_sysadmin_data
      ident
      help_edit_pacman_root
+     ident
+     help_use_now
      ident
 
   printf "
@@ -102,6 +106,9 @@ function type_operation_select(){
         --restore-root-pacman)
         restore_root_p2
 		;;
+        --use-now)
+        find_user
+
    esac
 }
 function pre_mount_work(){
@@ -180,10 +187,19 @@ function end_base_manager(){
     fi
 }
 function clear_dir(){
-        umount -Rv $transactional_dir &&\
-        umount -Rv $toplevel_dir &&
-        rmdir $transactional_dir &&
-        rmdir $toplevel_dir &&
+        umount -Rv $transactional_dir
+        umount -Rv $transactional_dir
+        umount -Rv $transactional_dir
+        umount -Rv $transactional_dir
+        umount -Rv $transactional_dir
+        umount -Rv $toplevel_dir
+        umount -Rv $toplevel_dir
+        umount -Rv $toplevel_dir
+        umount -Rv $toplevel_dir
+        umount -Rv $toplevel_dir
+        rmdir $transactional_dir
+        rmdir $toplevel_dir
+        rmdir /tmp/tmp.*
         echo "transação concluída"
 }
 function end_base_manager_error(){
@@ -232,14 +248,14 @@ function critical_error_exiting(){
 ########################################################################################################################
 function help_bootloader_update(){
   printf "
-  --bootloader-update
+    --bootloader-update
   
-  Adicione e remova parâmetros de kernel, ou outras customizações que queira,
-  em /etc/default/grub, ou /etc/grub.d, conforme a documentação oficial.
-  Você deve editar o SEU /etc/default/grub, não via --edit-pacmanroot,
-  e usar base-manager --bootloader-update também FORA de --edit-pacmanroot.
-  Pode ser usado após --restore-root
-  "
+        Adicione e remova parâmetros de kernel, ou outras customizações que queira,
+        em /etc/default/grub, ou /etc/grub.d, conforme a documentação oficial.
+        Você deve editar o SEU /etc/default/grub, não via --edit-pacmanroot,
+        e usar base-manager --bootloader-update também FORA de --edit-pacmanroot.
+        Pode ser usado após --restore-root
+"
 }
 function update_grub(){
     if [ -z $reason ] || [ $reason != "prestateless" ]; then
@@ -266,20 +282,19 @@ function update_grub(){
 
 function help_restore_root(){
 printf "
-  --restore-root
+    --restore-root(-no-stateless)
+ 
+        Abre um menu com a lista de branchs do root
+        Escolha um deles, aguarde o fim da operação,
+        e será a nova raiz padrão no próximo início do sistema
+        se você prosseguir, e no próximo passo responder com checkout,
+        o root ATUALMENTE MONTADO será tornado
+        o padrão.
+        Checkout deve ser usado quando você tiver dado boot em uma das branchs
+        via submenu da grub, e deseja que ela se torne o padrão de boot.
+        ATENÇÃO: se você está usando outra ferramenta para gerar os branchs,
+        use-a também para restaurar, e não esse scritp
 
-  Abre um menu com a lista de branchs do root
-  Escolha um deles, aguarde o fim da operação,
-  e será a nova raiz padrão no próximo início do sistema
-  se você prosseguir, e no próximo passo responder com checkout,
-  o root ATUALMENTE MONTADO será tornado
-  o padrão.
-  Checkout deve ser usado quando você tiver dado boot em uma das branchs
-  via submenu da grub, e deseja que ela se torne o padrão de boot.
-  ATENÇÃO: se você está usando outra ferramenta para gerar os branchs,
-  use-a também para restaurar, e não esse scritp
-
-  
 "
 }
 
@@ -368,27 +383,27 @@ function restore_root_p3(){
 
 function help_reset_sysadmin_data(){
   printf "
-  --reset-sysadmin-data
+    --reset-sysadmin-data
   
-    Todo o conteúdo de /etc, /var, /mnt , /opt, /srv, /root, /usr/local, /usr/lib/systemd e /home
-    presente no overlay será movido para um branch, recursivamente.
-    O conteúdo dos pontos de montagem customizados sobre esses diretórios não serão afetados,
-    porém eles não serão acessiveis a partir do próximo boot, se o fstab estiver
-    no overlay e não diretamente na base.
-    Caso você tenha trocado a senha root, pode ser uma boa hora para criar uma nova
-    diretamente na base usando --edit-pacmanroot
-    A respeito do seu usuário:
-    Se você tiver criado diretamente na base, ele ainda existirá,
-    com a senha, grupos e tudo mais que foi gravada na base.
-    Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
-    será preservada no branch
-    O branch será acessível montando o dispositivo de bloco btrfs diretamente, e usando o comando
-    btrfs su l -st /ponto/de/montagem | grep sysadmin-state--deprecated-- 
-    (ou alternativamente, de dentro de --edit-pacmanroot),
-    e conterá ao final a data e hora em que --reset-sysadmin-data for usado.
-    Esse tipo de branch possui informações sensíveis, como chaves ssh e senhas wifi.
-    Deletá-los é responsabilidade do sysadmin.
-
+        Todo o conteúdo de /etc, /var, /mnt , /opt, /srv, /root, /usr/local, /usr/lib/systemd e /home
+        presente no overlay será movido para um branch, recursivamente.
+        O conteúdo dos pontos de montagem customizados sobre esses diretórios não serão afetados,
+        porém eles não serão acessiveis a partir do próximo boot, se o fstab estiver
+        no overlay e não diretamente na base.
+        Caso você tenha trocado a senha root, pode ser uma boa hora para criar uma nova
+        diretamente na base usando --edit-pacmanroot
+        A respeito do seu usuário:
+        Se você tiver criado diretamente na base, ele ainda existirá,
+        com a senha, grupos e tudo mais que foi gravada na base.
+        Se foi criado no seu overlay, a senha, e configurações de grupos e permissões
+        será preservada no branch
+        O branch será acessível montando o dispositivo de bloco btrfs diretamente, e usando o comando
+        btrfs su l -st /ponto/de/montagem | grep sysadmin-state--deprecated-- 
+        (ou alternativamente, de dentro de --edit-pacmanroot),
+        e conterá ao final a data e hora em que --reset-sysadmin-data for usado.
+        Esse tipo de branch possui informações sensíveis, como chaves ssh e senhas wifi.
+        Deletá-los é responsabilidade do sysadmin.
+        
 "
 }
 
@@ -417,37 +432,37 @@ function reset_sysadmin_data(){
 
 function help_edit_pacman_root(){
  printf "
-  --edit-pacmanroot
+    --edit-pacmanroot
 
-  Só deve ser usado em casos especiais.
-  Instale  e remova programas via pac-base,
-  e edite arquivos de configuração normalmente em seu próprio /etc.
-  Fazendo dessa forma você garantirá que --reset-sysadmin-data
-  retorne todos os pacotes aos padrões de configuração do repositório
-
-
-  O --edit-pacmanroot consiste em gerar um novo branch do root, e entrar nele via chroot,
-  com plenas permissões
-  É possível integrar programas, remover programas,
-  adicionar módulos de kernel,ou qualquer operação que esteja documentada na wiki.
-
-##############################################################################
-  Mudanças que não forem revertidas serão inclusas nos branchs seguintes.
-##############################################################################
-                                      ATENÇÃO         
-                Essa função NÃO é necessária para editar a cmdline do kernel
-                            edite normalmente seu /etc/default/gub
-                                  e regere o grub.cfg
-                          usando base-manager --bootloader-update
-              
-                                    IMPORTANTE
-
-          Configurações inseridas diretamente na base NÃO SERÃO limpas por --reset-sysadmin-data
-
-************************************************************************************************************
-            Não existe sistema, ou implementação, a prova de burrice, então seja cauteloso
-*************************************************************************************************************
-
+        Só deve ser usado em casos especiais.
+        Instale  e remova programas via pac-base,
+        e edite arquivos de configuração normalmente em seu próprio /etc.
+        Fazendo dessa forma você garantirá que --reset-sysadmin-data
+        retorne todos os pacotes aos padrões de configuração do repositório
+        
+        
+        O --edit-pacmanroot consiste em gerar um novo branch do root, e entrar nele via chroot,
+        com plenas permissões
+        É possível integrar programas, remover programas,
+        adicionar módulos de kernel,ou qualquer operação que esteja documentada na wiki.
+        
+        ############################################################################
+            Mudanças que não forem revertidas serão inclusas nos branchs seguintes.
+        ############################################################################
+                                            ATENÇÃO         
+                      Essa função NÃO é necessária para editar a cmdline do kernel
+                                  edite normalmente seu /etc/default/gub
+                                        e regere o grub.cfg
+                                usando base-manager --bootloader-update
+                    
+                                          IMPORTANTE
+        
+                Configurações inseridas diretamente na base NÃO SERÃO limpas por --reset-sysadmin-data
+        
+        **********************************************************************************************************
+                  Não existe sistema, ou implementação, a prova de burrice, então seja cauteloso
+        ***********************************************************************************************************
+        
 "
 }
 
@@ -468,7 +483,47 @@ function exiting_edit_pacman_root(){
         update_grub
 	fi
 }
+function help_use_now(){
+printf "
+    --use-now
 
+        Provê um terminal chroot de onde é
+        ---------------------------------------
+        TEORICAMENTE
+        ---------------------------------------
+        possível chamar novos programas, mesmo os gráficos, que foram adicionados à base via pac-base, sem reiniciar
+        a atual branch upstream será montada diretamente, sobre ela uma montagem bind de todos os overlays
+        de sysadmin
+        Em seguida, arch-chroot <upstream> mount -av && su - <user> (você será perguntado sobre qual user)
+        Ao sair, tudo é desmontado.
+        Dado que a branch upstream é somente leitura, o uso dessa função não implica em uma nova branch.
+        ##############################################################################################
+        Só use isso se não puder evitar, teste gerar um container do ArchLinux via Distrobox,
+        e instalar o que precisa dentro dele.
+        ###############################################################################################
+
+"
+}
+function find_user(){
+    read -p "digite o nome do usuário a ser usado: " username
+    use_now
+}
+function use_now(){
+    mount $block_device_root $transactional_dir -o "subvol="$default_root &&
+    mount --bind /etc $transactional_dir/etc &&\
+    mount --bind /var $transactional_dir/var &&\
+    mount --bind /root $transactional_dir/root &&\
+    mount --bind /srv $transactional_dir/srv &&\
+    mount --bind /opt $transactional_dir/opt &&\
+    mount --bind /usr/lib/systemd $transactional_dir/usr/lib/systemd &&\
+    mount --bind "/usr/local" $transactional_dir/"usr/local" &&\
+    mount --bind /home $transactional_dir/home &&\
+    use_now_chroot
+}
+function use_now_chroot(){
+    arch-chroot $transactional_dir su - $username
+    clear_dir
+}
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -537,7 +592,14 @@ function terms_user_base_manager(){
          help_edit_pacman_root
          terms_user_base_manager
                 ;;
-                    *)
+    --use-now)
+         menu_select=$@
+         clear
+         stateless_arch_welcome
+         help_use_now
+         terms_user_base_manager
+                ;;
+        *)
          stateless_arch_welcome
          display_functions
          exit 0
