@@ -271,9 +271,11 @@ printf "
   Abre um menu com a lista de branchs do root
   Escolha um deles, aguarde o fim da operação,
   e será a nova raiz padrão no próximo início do sistema
-  se você prosseguir, e no próximo passo responder com checkout, o root ATUALMENTE MONTADO será tornado
-  o padrão
-  checkout deve ser usado quando você tiver dado boot em uma das branchs via submenu da grub, e deseja que ela se torne o padrão de boot.
+  se você prosseguir, e no próximo passo responder com checkout,
+  o root ATUALMENTE MONTADO será tornado
+  o padrão.
+  Checkout deve ser usado quando você tiver dado boot em uma das branchs
+  via submenu da grub, e deseja que ela se torne o padrão de boot.
   ATENÇÃO: se você está usando outra ferramenta para gerar os branchs,
   use-a também para restaurar, e não esse scritp
 
@@ -291,7 +293,9 @@ printf "
            pré --bootloader-update e pré --edit-pacmanroot.
            Informe abaixo o ID do subvolume que deseja restaurar
            Você pode precisar diminuir o zoom do terminal e rolar a tela para entender melhor a lista
+           ###############################################################################
            responda checkout agora caso queira restaurar para o root atualmente em uso.
+           ###############################################################################
 "
     else [ $reason == "prestateless" ]
     search_parameter="pre-stateless"
