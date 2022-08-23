@@ -118,20 +118,23 @@ function transactional_operation(){
     btrfs su snap $toplevel_dir/$default_root $toplevel_dir/@transactional_branch &&\
     mount $block_device_root $transactional_dir -o "subvol="@transactional_branch
 }
-function bind_mount(){
+function bind_mount_pacman(){
     mkdir -p /var/cache/pacman/pkg &&\
     mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
-    mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
-    mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
-    mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/ &&\
     mount --bind /etc/pacman.d/ $transactional_dir/etc/pacman.d &&\
     mount --bind /etc/pacman.conf $transactional_dir/etc/pacman.conf &&\
     mount --bind /etc/mkinitcpio.conf $transactional_dir/etc/mkinitcpio.conf &&\
     mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
+    mount --bind /etc/modprobe.d $transactional_dir/etc/modprobe.d &&\
     mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
 }
+function bind_mount_grub(){
+    mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
+    mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
+    mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/
+}
 function bootloader_update(){
-    bind_mount &&
+    bind_mount_grub &&
     arch-chroot $transactional_dir $update_grub_command
 }
 function manage_branch(){
@@ -472,6 +475,7 @@ function edit_pacman_root (){
     btrfs filesystem sync $toplevel_dir &&\
     sufix="--edit-pacmanroot"
     bind_mount &&\
+    bind_mount_pacman &&\
 printf "Entrando em PacmanRoot
 "
     arch-chroot $transactional_dir

@@ -14,17 +14,20 @@ function transactional_operation(){
       mount $block_device_root $transactional_dir -o "subvol="@transactional_branch &&\
       btrfs filesystem sync $toplevel_dir
 }
-function bind_mount(){
+function bind_mount_pacman(){
     mkdir -p /var/cache/pacman/pkg
-      mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
-      mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
-      mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
-      mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/ &&\
-      mount --bind /etc/pacman.d/ $transactional_dir/etc/pacman.d &&\
-      mount --bind /etc/pacman.conf $transactional_dir/etc/pacman.conf &&\
-      mount --bind /etc/mkinitcpio.conf $transactional_dir/etc/mkinitcpio.conf &&\
-      mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
-      mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
+    mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
+    mount --bind /etc/pacman.d/ $transactional_dir/etc/pacman.d
+    mount --bind /etc/pacman.conf $transactional_dir/etc/pacman.conf &&\
+    mount --bind /etc/mkinitcpio.conf $transactional_dir/etc/mkinitcpio.conf &&\
+    mount --bind /etc/mkinitcpio.d $transactional_dir/etc/mkinitcpio.d &&\
+    mount --bind /etc/modprobe.d $transactional_dir/etc/modprobe.d &&\
+    mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
+}
+function bind_mount_grub(){
+    mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
+    mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
+    mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/
 }
 function manage_branch(){
     manage_branch_1
@@ -66,7 +69,7 @@ function manage_branch_error(){
     fi
 }
 function bootloader_update(){
-    bind_mount &&
+    bind_mount_grub &&
     arch-chroot $transactional_dir $update_grub_command
 }
 function end_base_manager(){
@@ -130,7 +133,7 @@ function exit_pac_base_sucess(){
 function run_pac_base (){
 	pre_mount_work
 	transactional_operation
-    bind_mount
+    bind_mount_pacman
     arch-chroot $transactional_dir pacman $command_pacman
     err=$?
     decision_pac
