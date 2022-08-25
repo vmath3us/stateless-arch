@@ -11,8 +11,10 @@ Se valendo de overlayfs, e de como é fácil adicionar tarefas ao init do ArchLi
 
 **Dado que o pacman envia para stdout o status da operação, e que arch-chroot é capaz de rodar comandos, e trazer seu status de saída de volta para o host, via snapshots btrfs se faz possível que a operação sempre seja feita não diretamente no root atualmente em uso, e sim em uma nova "branch" do sistema. Assim, como um git, o status da operação de "merge" dos novos pacotes define se aquela branch se tornará o novo padrão do "repositório". Se o merge for bem sucedido, a branch é promovida. Caso contrário, ela é descartada. Nenhum bit do root atualmente em uso é tocado durante uma operação de "merge", portanto, por menores que sejam as adições/modificações, se faz necessário reiniciar para usá-las.**
 
+[Se você estiver familiarizado com o funcionamento das atualizações do Opensuse Kubic/MicroOs](https://kubic.opensuse.org/documentation/transactional-update-guide/tu-howitworks.html), apenas lhe dizer que aqui todas as transações rodam com --continue por padrão, e voltam para current-root apenas em caso de erros críticos na manipulação de new-roots ainda não bootados bastará para ter uma ideia geral do sistema.
 
-Usando termos de git para se referir ao manuseio do sistema, a comunicação ficará clara.
+Para quem não tem familiaridade com um sistema de arquivos com suporte a snapshots + abordagem transacional, usar termos de git para se referir ao manuseio do sistema pode tornar a comunicação mais clara.
+
 Em Stateless-Arch transacional, adicionar e remover programas, bem como quaisquer intervenções no root verdadeiro significa:
 
 1. checkout -b transacional main
@@ -21,11 +23,13 @@ Em Stateless-Arch transacional, adicionar e remover programas, bem como quaisque
 3. se o processo de merge for bem sucedido, faça 
 * branch -m main old-main-date-operation
 * branch -m transactional main
+* o próximo boot implica em checkout main
 
 3. se o processo de merge for mal sucedido, faça 
 * git branch -D transactional
 
 **Assim como num repositório, o processo de merge de novo código (no caso de um sistema, adição/remoção de programas) ser bem sucedido NÃO IMPLICA em um perfeito funcionamento posterior do código em si. Mas usando uma abordagem transacional, o sysadmin sempre terá um root de estado conhecido para o qual voltar (branch -m main broken-main && checkout -b main old-main-date-operation).**
+
 
 # Implementação <h2>
 
@@ -97,7 +101,7 @@ Será papel do sysadmin implementar quaisquer políticas que queira de garbage c
 
 # Considerações finais <h8>
 
-Um leitor atento já percebeu que a ideia aqui é que PacmanRoot permaneça sempre em "estado de pacstrap": Qualquer nova branch terá somente pacotes do pacman, em seus padrões, somado à pouca configuração (senha root e locales) de /etc geradas durante a instalação; faça todo o resto no overlay do sysadmin, e na sua home, e você poderá enviar um branch de PacmanRoot para outra pessoa/dispositivo ( usando btrfs send/receive, tar, rsycn, ou que for), com a certeza de não enviar junto chaves ssh, senhas de wifi, ou outras informações sensíveis; use base-manager --reset-sysadmin-data, e no boot seguinte o sistema retornará em "modo de fábrica".
+Um leitor atento já percebeu que a ideia aqui é que PacmanRoot permaneça sempre em "estado de pacstrap": Qualquer nova branch terá somente pacotes do pacman, em seus padrões, somado à pouca configuração (senha root e locales) de /etc geradas durante a instalação; faça todo o resto no overlay do sysadmin, e na sua home, e você poderá enviar um branch de PacmanRoot para outra pessoa/dispositivo ( usando btrfs send/receive, tar, rsycn, ou que for), com a certeza de não enviar junto chaves ssh, senhas de wifi, ou outras informações sensíveis; use base-manager --reset-sysadmin-data, e no boot seguinte o sistema retornará em "modo de fábrica". Outro caso de uso seria uma abordagem semelhante a [Erase your darlings](https://grahamc.com/blog/erase-your-darlings), onde se embute, direto em PacmanRoot, configurações de root consideradas ótimas, e em todo boot, o initrd recria um overlay de sysadmin limpo. É fácil converter Stateless Arch para esse propósito (dica, só precisa de duas linhas a mais no initrd, e algumas poucas remoções em base-manager e pac-base), mas deixo essa tarefa para quem se interessar por esse caso de uso.
 
 O sistema dessa forma será altamente resiliente. De fato, excetuando algo que afete diretamente o sistema de arquivos, ou apagar as imagens da grub (mbr do disco se disco mbr+legacy, partição biosboot se gpt+legacy, arquivos da partição fat-32 se efi), o sistema é facilmente recuperável em praticamente qualquer situação sem necessidade de live-boot. Novo kernel/driver de vídeo problemático? Use base-manager --restore-root em um branch anterior. A grub não encontrou o arquivo de configuração e caiu no shell? Use a cli para chamar o configfile de qualquer um dos branchs, todos eles terão um grub.cfg. Grub-rescue? Chame o binário da grub de qualquer um dos branchs, e você terá o grub-shell completo, se onde será possível chamar o grub.cfg de qualquer um dos branchs.
 
