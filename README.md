@@ -59,6 +59,8 @@ Ao concluir o boot, a raiz consistirá em duas camadas, sendo:
 
 # Sobre pontos de montagem e serviços <h4>
 
+Ainda que não seja necessária a presença de PacmanRoot no fstab para o sucesso do boot, é uma boa prática que ele esteja lá. Pelo menos nos meus testes, quando ele não está presente, opções de montagem referentes a compressão de todos os subvolumes do mesmo dispositivo de bloco não são honradas. Então tenha sim / no fstab, apenas por esse motivo. Se não usar compressão, pode ignorar esse aviso.
+
 **É uma boa prática existir uma montagem verdadeira para /home/$USER no fstab do sysadmin**, que será montada sobre o overlay de /home. Ferramentas de gerenciamento de container (docker/podman) não funcionam corretamente quando seu armazenamento é um overlay. Crie um subvolume/partição para a home de cada usuário da máquina, e os coloque corretamente no fstab. O mesmo pode ser verdade (não testado) para bancos de dados e imagens de máquinas virtuais nos diretórios aninhados em /var. Se usa algumas dessas coisas no dia a dia, e precisa que fiquem na hierarquia de /var, tenha partições e subvolumes verdadeiros para montar apropriadamente. Enfim, teste suas montagens antes de migrar totalmente para Stateless Arch, e verifique se quaisquer inconsistências encontradas podem ser resolvidas criando um ponto de montagem dedicado.
 
 # Usabilidade <h6>
