@@ -191,15 +191,8 @@ function end_base_manager(){
 }
 function clear_dir(){
         umount -Rv $transactional_dir
-        umount -Rv $transactional_dir
-        umount -Rv $transactional_dir
-        umount -Rv $transactional_dir
-        umount -Rv $transactional_dir
         umount -Rv $toplevel_dir
-        umount -Rv $toplevel_dir
-        umount -Rv $toplevel_dir
-        umount -Rv $toplevel_dir
-        umount -Rv $toplevel_dir
+        umount -Rv /tmp/tmp.*
         rmdir $transactional_dir
         rmdir $toplevel_dir
         rmdir /tmp/tmp.*
