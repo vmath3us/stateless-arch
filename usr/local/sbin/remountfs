@@ -1,2 +1,0 @@
-#!/bin/bash
-mount -av && mount -av -o remount || mount -av -o remount && mount -av

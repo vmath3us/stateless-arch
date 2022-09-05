@@ -116,17 +116,12 @@ function mount_device_and_manage_subvols(){
 }
 function copy_scripts_to_root(){
   cp usr/local/sbin/base-manager /usr/local/sbin/base-manager &&\
-  cp usr/local/sbin/remountfs /usr/local/sbin/remountfs &&\
   cp usr/local/sbin/pac-base /usr/local/sbin/pac-base &&\
   cp usr/local/sbin/garbageauto /usr/local/sbin/garbageauto &&\
   cp usr/lib/initcpio/hooks/stateless-mode-boot /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   cp usr/lib/initcpio/install/stateless-mode-boot /usr/lib/initcpio/install/stateless-mode-boot &&\
-  mkdir -p /etc/systemd/system &&\
-  cp etc/systemd/system/remount.service /etc/systemd/system/remount.service &&\
-  cp -r etc/systemd/system/multi-user.target.wants /etc/systemd/system/multi-user.target.wants &&\
   chmod a+x /usr/local/sbin/base-manager &&\
   chmod a+x /usr/local/sbin/pac-base &&\
-  chmod a+x /usr/local/sbin/remountfs &&\
   chmod a+x /usr/lib/initcpio/hooks/stateless-mode-boot &&\
   chmod a+x /usr/lib/initcpio/install/stateless-mode-boot &&\
   end_implementation || printf "
