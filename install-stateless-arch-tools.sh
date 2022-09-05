@@ -101,7 +101,6 @@ function mount_device_and_manage_subvols(){
     btrfs su snap $toplevel_dir/$subvol_to_move $toplevel_dir/@root-pre-stateless-in--$moment &&\
     mv $toplevel_dir/$subvol_to_move $toplevel_dir/$default_root &&\
     btrfs filesystem sync $toplevel_dir &&\
-    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root-pos-stateless-in-$moment &&\
       if [ $? -eq 0 ] ; then
         btrfs filesystem sync $toplevel_dir &&\
           copy_scripts_to_root
@@ -131,9 +130,9 @@ function copy_scripts_to_root(){
 
 }
 function end_implementation (){
-  moment=$(date +%Y-%m-%d--%H-%M-%S) &&\
-  btrfs su cr $toplevel_dir/$default_sysadmin_data &&
-      err=$?
+    moment=$(date +%Y-%m-%d--%H-%M-%S) &&\
+    btrfs su snap -r $toplevel_dir/$default_root $toplevel_dir/@root-pos-stateless-in-$moment &&\
+    btrfs su cr $toplevel_dir/$default_sysadmin_data; err=$? &&\
     if [ $err -eq 0 ] ; then
             btrfs filesystem sync $toplevel_dir &&\
             umount -Rv $toplevel_dir &&\
