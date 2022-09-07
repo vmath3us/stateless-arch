@@ -41,7 +41,6 @@ printf "
            --restore-root-no-stateless
            --reset-sysadmin-data
            --edit-pacmanroot
-           --use-now
 
 "
 }
@@ -480,47 +479,47 @@ function exiting_edit_pacman_root(){
         update_grub
 	fi
 }
-function help_use_now(){
-printf "
-    --use-now
-
-        Provê um terminal chroot de onde é
-        ---------------------------------------
-        TEORICAMENTE
-        ---------------------------------------
-        possível chamar novos programas, mesmo os gráficos, que foram adicionados à base via pac-base, sem reiniciar
-        a atual branch upstream será montada diretamente, sobre ela uma montagem bind de todos os overlays
-        de sysadmin
-        Em seguida, arch-chroot <upstream> mount -av && su - <user> (você será perguntado sobre qual user)
-        Ao sair, tudo é desmontado.
-        Dado que a branch upstream é somente leitura, o uso dessa função não implica em uma nova branch.
-        ##############################################################################################
-        Só use isso se não puder evitar, teste gerar um container do ArchLinux via Distrobox,
-        e instalar o que precisa dentro dele.
-        ###############################################################################################
-
-"
-}
-function find_user(){
-    read -p "digite o nome do usuário a ser usado (deixe em branco para root): " username
-    use_now
-}
-function use_now(){
-    mount $block_device_root $transactional_dir -o "subvol="$default_root &&
-    mount --bind /etc $transactional_dir/etc &&\
-    mount --bind /var $transactional_dir/var &&\
-    mount --bind /root $transactional_dir/root &&\
-    mount --bind /srv $transactional_dir/srv &&\
-    mount --bind /opt $transactional_dir/opt &&\
-    mount --bind /usr/lib/systemd $transactional_dir/usr/lib/systemd &&\
-    mount --bind "/usr/local" $transactional_dir/"usr/local" &&\
-    mount --bind /home $transactional_dir/home &&\
-    use_now_chroot
-}
-function use_now_chroot(){
-    arch-chroot $transactional_dir  mount -av && su - $username
-    clear_dir
-}
+#function help_use_now(){
+#printf "
+#    --use-now
+#
+#        Provê um terminal chroot de onde é
+#        ---------------------------------------
+#        TEORICAMENTE
+#        ---------------------------------------
+#        possível chamar novos programas, mesmo os gráficos, que foram adicionados à base via pac-base, sem reiniciar
+#        a atual branch upstream será montada diretamente, sobre ela uma montagem bind de todos os overlays
+#        de sysadmin
+#        Em seguida, arch-chroot <upstream> mount -av && su - <user> (você será perguntado sobre qual user)
+#        Ao sair, tudo é desmontado.
+#        Dado que a branch upstream é somente leitura, o uso dessa função não implica em uma nova branch.
+#        ##############################################################################################
+#        Só use isso se não puder evitar, teste gerar um container do ArchLinux via Distrobox,
+#        e instalar o que precisa dentro dele.
+#        ###############################################################################################
+#
+#"
+#}
+#function find_user(){
+#    read -p "digite o nome do usuário a ser usado (deixe em branco para root): " username
+#    use_now
+#}
+#function use_now(){
+#    mount $block_device_root $transactional_dir -o "subvol="$default_root &&
+#    mount --bind /etc $transactional_dir/etc &&\
+#    mount --bind /var $transactional_dir/var &&\
+#    mount --bind /root $transactional_dir/root &&\
+#    mount --bind /srv $transactional_dir/srv &&\
+#    mount --bind /opt $transactional_dir/opt &&\
+#    mount --bind /usr/lib/systemd $transactional_dir/usr/lib/systemd &&\
+#    mount --bind "/usr/local" $transactional_dir/"usr/local" &&\
+#    mount --bind /home $transactional_dir/home &&\
+#    use_now_chroot
+#}
+#function use_now_chroot(){
+#    arch-chroot $transactional_dir  mount -av && su - $username
+#    clear_dir
+#}
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -589,13 +588,13 @@ function terms_user_base_manager(){
          help_edit_pacman_root
          terms_user_base_manager
                 ;;
-    --use-now)
-         menu_select=$@
-         clear
-         stateless_arch_welcome
-         help_use_now
-         terms_user_base_manager
-                ;;
+#    --use-now)
+#         menu_select=$@
+#         clear
+#         stateless_arch_welcome
+#         help_use_now
+#         terms_user_base_manager
+#                ;;
         *)
          stateless_arch_welcome
          display_functions
