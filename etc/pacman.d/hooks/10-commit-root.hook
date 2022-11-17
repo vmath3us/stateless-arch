@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target= grub
+[Action]
+Description = reinstall grub after upgrade
+When = PostTransaction
+Exec = /usr/local/sbin/create-log-grub
+AbortOnFail
