@@ -1,6 +1,7 @@
 #!/bin/bash
 block_device_root=$(grub-probe / --target=device)
 default_root="@base_system"
+custom_grub_reinstall_routine="/bin/bash ./usr/local/sbin/user-customize-grub-setup"
 update_grub_command="grub-mkconfig -o /boot/grub/grub.cfg"
 transactional_dir=$(mktemp -d -p /tmp)
 toplevel_dir=$(mktemp -d -p /tmp)
@@ -25,6 +26,7 @@ function bind_mount_pacman(){
     mount --bind /var/cache/pacman/pkg $transactional_dir/var/cache/pacman/pkg
 }
 function bind_mount_grub(){
+    mount --bind /usr/local/ $transactional_dir/usr/local/ &&\
     mount --bind /etc/default/grub $transactional_dir/etc/default/grub &&\
     mount --bind /etc/grub.d $transactional_dir/etc/grub.d &&\
     mount --bind /etc/default/grub-btrfs/ $transactional_dir/etc/default/grub-btrfs/
@@ -70,7 +72,14 @@ function manage_branch_error(){
 }
 function bootloader_update(){
     bind_mount_grub &&
+    if [ -f /usr/local/sbin/grub-as-updated.log ] ; then
+    transactional_dir=$transactional_dir arch-chroot $transactional_dir $custom_grub_reinstall_routine &&
+    rm /usr/local/sbin/grub-as-updated.log &&
     arch-chroot $transactional_dir $update_grub_command
+    else
+    arch-chroot $transactional_dir $update_grub_command
+    fi
+
 }
 function end_base_manager(){
     if [ -d $toplevel_dir/$default_root ] ; then
@@ -86,6 +95,7 @@ function end_base_manager(){
 function clear_dir(){
     umount -Rv $transactional_dir
     umount -Rv $toplevel_dir
+    umount -Rv /tmp/tmp.*
     rmdir $transactional_dir
     rmdir $toplevel_dir
 }

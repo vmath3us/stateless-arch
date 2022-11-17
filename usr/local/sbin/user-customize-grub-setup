@@ -1,0 +1,21 @@
+#!/bin/bash
+transactional_dir=$transactional_dir
+###############################-set reinstall grub, mounts or another parameters##############################
+function grub_efi(){
+mount $block_device_efi $transactional_dir/$efi_dir &&
+grub-install --target='x86_64-efi' '--efi-directory='$efi_dir --recheck && exit 0 || exit 1
+}
+function grub_legacy(){
+grub-install --target='i386-pc' $disk_for_grub --recheck && exit 0 || exit 1
+}
+###############################---- complete and uncomment for your scenery
+#########---- for efi
+
+#$efi_dir="/boot/efi"                           
+#block_device_efi="/dev/sdX"
+#grub_efi
+
+########---- for legacy
+
+#disk_for_grub="/dev/sdX"
+#grub_legacy
