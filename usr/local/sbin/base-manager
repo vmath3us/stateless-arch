@@ -466,7 +466,7 @@ function help_edit_pacman_root(){
 function edit_pacman_root (){
     btrfs filesystem sync $toplevel_dir &&\
     sufix="--edit-pacmanroot"
-    bind_mount &&\
+    bind_mount_grub &&\
     bind_mount_pacman &&\
 printf "Entrando em PacmanRoot
 "
