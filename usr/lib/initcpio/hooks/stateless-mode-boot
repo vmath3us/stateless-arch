@@ -60,6 +60,6 @@ run_latehook() {
 	mount -t overlay overlay -o lowerdir=${lower_dir_usrlocal},upperdir=${sysadmin_overlay}/usrlocal,workdir=${sysadmin_overlay}/work_usrlocal,index=off,metacopy=off  ${root_mnt}/usr/local &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_mnt},upperdir=${sysadmin_overlay}/mnt,workdir=${sysadmin_overlay}/work_mnt,index=off,metacopy=off  ${root_mnt}/mnt &&
 	mount -t overlay overlay -o lowerdir=${lower_dir_opt},upperdir=${sysadmin_overlay}/opt,workdir=${sysadmin_overlay}/work_opt,index=off,metacopy=off  ${root_mnt}/opt &&
-	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${sysadmin_overlay}/srv,workdir=${sysadmin_overlay}/work_srv,index=off,metacopy=off  ${root_mnt}/srv && ####################### remove && to disable home overlay
-    mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${sysadmin_overlay}/home,workdir=${sysadmin_overlay}/work_home,index=off,metacopy=off  ${root_mnt}/home ####################### comment to disable home overlay 
+	mount -t overlay overlay -o lowerdir=${lower_dir_srv},upperdir=${sysadmin_overlay}/srv,workdir=${sysadmin_overlay}/work_srv,index=off,metacopy=off  ${root_mnt}/srv #&& ##################### remove && to disable home overlay
+    #mount -t overlay overlay -o lowerdir=${lower_dir_home},upperdir=${sysadmin_overlay}/home,workdir=${sysadmin_overlay}/work_home,index=off,metacopy=off  ${root_mnt}/home ####################### comment to disable home overlay 
 }
